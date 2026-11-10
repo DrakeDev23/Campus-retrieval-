@@ -1,0 +1,10 @@
+export { default } from './LandingPage';
+export { default as LandingPage } from './LandingPage';
+export { default as Navbar } from './Navbar';
+export { default as Hero } from './Hero';
+export { default as StatsSection } from './StatsSection';
+export { default as HowItWorksSection } from './HowItWorksSection';
+export { default as RecentFoundSection } from './RecentFoundSection';
+export { default as FeaturesSection } from './FeaturesSection';
+export { default as FaqSection } from './FaqSection';
+export { default as Footer } from './Footer';
