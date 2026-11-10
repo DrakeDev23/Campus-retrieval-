@@ -13,9 +13,9 @@ export default function Hero() {
       <div aria-hidden="true" className="absolute bottom-0 inset-x-0 h-32 -z-10 pointer-events-none bg-gradient-to-t from-white to-transparent" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 xl:gap-8 items-center">
           
-          <div className="lg:col-span-7 flex flex-col space-y-6 text-left">
+          <div className="xl:col-span-7 flex flex-col space-y-6 text-left">
             <div className="inline-flex items-center gap-2 self-start px-3 py-1 rounded-full text-xs font-semibold bg-blue-100/90 text-blue-900 border border-blue-200 shadow-sm backdrop-blur-sm">
               <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
               Official Campus Lost &amp; Found Portal
@@ -67,7 +67,7 @@ export default function Hero() {
             </div>
           </div>
 
-          <div className="lg:col-span-5 flex justify-center lg:justify-end mt-8 lg:mt-0">
+          <div className="hidden xl:flex xl:col-span-5 justify-center xl:justify-end mt-8 xl:mt-0">
             <div className="relative w-full max-w-[260px] sm:max-w-sm lg:max-w-md flex justify-center items-center">
               <div className="absolute -top-3 left-0 sm:-top-2 sm:-left-2 z-10 bg-white rounded-2xl px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-md border border-blue-50 select-none flex items-center gap-1.5 pointer-events-none">
                 <span>Lost something? I&apos;ll help!</span>
