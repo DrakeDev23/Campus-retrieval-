@@ -1,7 +1,122 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import campusBg from '../../assets/uc.jpg';
 
 export default function RecentFoundSection() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollRef = useRef(null);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const container = scrollRef.current;
+    const scrollPosition = container.scrollLeft;
+    const children = Array.from(container.children);
+    if (!children.length) return;
+
+    let closestIndex = 0;
+    let minDiff = Infinity;
+    children.forEach((child, idx) => {
+      const diff = Math.abs(child.offsetLeft - container.offsetLeft - scrollPosition);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIndex = idx;
+      }
+    });
+    setCurrentIndex(closestIndex);
+  };
+
+  const scrollToIndex = (index) => {
+    if (!scrollRef.current) return;
+    const targetChild = scrollRef.current.children[index];
+    if (targetChild) {
+      targetChild.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+      setCurrentIndex(index);
+    }
+  };
+
+  const renderItemCard = (item) => (
+    <div
+      key={item.title}
+      className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between h-full"
+    >
+      <div>
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">
+            {item.category}
+          </span>
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${item.statusColor}`}>
+            {item.status}
+          </span>
+        </div>
+
+        <div className="w-full h-44 sm:h-48 rounded-xl bg-slate-100 border border-slate-200 mb-4 overflow-hidden flex flex-col items-center justify-center relative">
+          <div className="flex flex-col items-center justify-center text-slate-400 gap-1.5 select-none">
+            <svg className="w-9 h-9 text-slate-300" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+            </svg>
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">No photo provided</span>
+          </div>
+          <img
+            src=""
+            alt={item.title}
+            className="absolute inset-0 w-full h-full object-cover hidden"
+            onError={(e) => { e.currentTarget.classList.add('hidden'); }}
+            onLoad={(e) => { e.currentTarget.classList.remove('hidden'); }}
+          />
+        </div>
+
+        <div>
+          <h3 className="text-base font-bold text-[#0f172a]">
+            {item.title}
+          </h3>
+          <p className="mt-1 text-sm text-slate-600 leading-relaxed">
+            {item.description}
+          </p>
+        </div>
+
+        <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+          <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+          </svg>
+          <span>Private serial # &amp; marks withheld</span>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 space-y-1.5">
+          <div className="flex justify-between">
+            <span className="text-slate-400">Found:</span>
+            <span className="font-medium text-slate-700">{item.foundTime}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Location:</span>
+            <span className="font-medium text-slate-700">{item.location}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Custody:</span>
+            <span className={`font-medium ${item.custodyColor}`}>{item.custody}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2">
+        <button type="button" className="flex-1 py-2 px-3 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition text-center">
+          View Details
+        </button>
+        {item.buttonType === 'claim' ? (
+          <button type="button" className="flex-1 py-2 px-3 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition text-center">
+            Claim Item
+          </button>
+        ) : (
+          <button type="button" disabled className="flex-1 py-2 px-3 text-xs font-semibold text-slate-400 bg-slate-50 rounded-lg cursor-not-allowed text-center border border-slate-200">
+            Case Closed
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   const items = [
     {
       category: 'Electronics',
@@ -103,86 +218,49 @@ export default function RecentFoundSection() {
           </a>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item) => (
-            <div
-              key={item.title}
-              className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-4">
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">
-                    {item.category}
-                  </span>
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${item.statusColor}`}>
-                    {item.status}
-                  </span>
-                </div>
-
-                <div className="w-full h-44 sm:h-48 rounded-xl bg-slate-100 border border-slate-200 mb-4 overflow-hidden flex flex-col items-center justify-center relative">
-                  <div className="flex flex-col items-center justify-center text-slate-400 gap-1.5 select-none">
-                    <svg className="w-9 h-9 text-slate-300" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-                    </svg>
-                    <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">No photo provided</span>
-                  </div>
-                  <img
-                    src=""
-                    alt={item.title}
-                    className="absolute inset-0 w-full h-full object-cover hidden"
-                    onError={(e) => { e.currentTarget.classList.add('hidden'); }}
-                    onLoad={(e) => { e.currentTarget.classList.remove('hidden'); }}
-                  />
-                </div>
-
-                <div>
-                  <h3 className="text-base font-bold text-[#0f172a]">
-                    {item.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-600 leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
-
-                <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                  <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                  </svg>
-                  <span>Private serial # &amp; marks withheld</span>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Found:</span>
-                    <span className="font-medium text-slate-700">{item.foundTime}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Location:</span>
-                    <span className="font-medium text-slate-700">{item.location}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Custody:</span>
-                    <span className={`font-medium ${item.custodyColor}`}>{item.custody}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2">
-                <button type="button" className="flex-1 py-2 px-3 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition text-center">
-                  View Details
-                </button>
-                {item.buttonType === 'claim' ? (
-                  <button type="button" className="flex-1 py-2 px-3 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition text-center">
-                    Claim Item
-                  </button>
-                ) : (
-                  <button type="button" disabled className="flex-1 py-2 px-3 text-xs font-semibold text-slate-400 bg-slate-50 rounded-lg cursor-not-allowed text-center border border-slate-200">
-                    Case Closed
-                  </button>
-                )}
-              </div>
+        <div className="sm:hidden">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 shadow-xs">
+              <svg className="w-3.5 h-3.5 text-blue-600 animate-pulse" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 7.5 3 12m0 0 4.5 4.5M3 12h18m-4.5-4.5L21 12m0 0-4.5 4.5" />
+              </svg>
+              <span>Swipe left or right</span>
             </div>
-          ))}
+            <div className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+              {currentIndex + 1} of {items.length}
+            </div>
+          </div>
+
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-4 pb-2 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {items.map((item) => (
+              <div key={item.title} className="w-full shrink-0 snap-center">
+                {renderItemCard(item)}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-center gap-1.5 mt-5">
+            {items.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => scrollToIndex(idx)}
+                aria-label={`Go to item ${idx + 1}`}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  currentIndex === idx ? 'w-6 bg-blue-600' : 'w-2 bg-slate-300 hover:bg-slate-400'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {items.map((item) => renderItemCard(item))}
         </div>
       </div>
     </section>
