@@ -1,9 +1,27 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import campusBg from '../../assets/uc.jpg';
 import mascot from '../../assets/uc-tigers-mascot.gif';
 
 export default function Hero() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showEmptyHint, setShowEmptyHint] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) {
+      setShowEmptyHint(true);
+      return;
+    }
+    navigate(`/browse-found-items?q=${encodeURIComponent(query)}`);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    if (showEmptyHint) setShowEmptyHint(false);
+  };
 
   return (
     <section className="relative overflow-hidden isolate pt-12 pb-24 md:pt-16 md:pb-32 lg:pt-20 lg:pb-36">
@@ -42,17 +60,38 @@ export default function Hero() {
             </div>
 
             <div className="pt-2 max-w-xl">
-              <form onSubmit={(e) => e.preventDefault()} className="relative flex items-center">
+              <form onSubmit={handleSearchSubmit} className="relative flex items-center" noValidate>
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                   </svg>
                 </div>
-                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search for lost items (e.g., Student ID, MacBook, keys)..." className="w-full pl-10 pr-28 py-3.5 bg-white/95 backdrop-blur-sm border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  placeholder="Search for lost items (e.g., Student ID, MacBook, keys)..."
+                  aria-invalid={showEmptyHint}
+                  aria-describedby={showEmptyHint ? 'hero-search-hint' : undefined}
+                  className={`w-full pl-10 pr-28 py-3.5 bg-white/95 backdrop-blur-sm border rounded-xl text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:outline-none focus:ring-2 transition ${
+                    showEmptyHint
+                      ? 'border-red-400 ring-2 ring-red-200 focus:ring-red-400 focus:border-red-400 animate-shake'
+                      : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500'
+                  }`}
+                />
                 <button type="submit" className="absolute right-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
                   Search
                 </button>
               </form>
+
+              {showEmptyHint && (
+                <p id="hero-search-hint" role="alert" className="mt-2 text-xs font-medium text-red-600 flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                  </svg>
+                  Type something to search, e.g. "keys" or "backpack".
+                </p>
+              )}
 
               <div className="flex items-center gap-2 mt-2.5 text-xs text-slate-500">
                 <span className="font-medium text-slate-600">Trending:</span>
