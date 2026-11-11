@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import campusBg from '../../assets/uc.jpg';
 
 export default function Footer() {
@@ -36,9 +37,9 @@ export default function Footer() {
               PUBLIC PORTAL
             </h3>
             <ul className="space-y-2.5 text-sm text-slate-600">
-              <li><a href="#home" className="transition hover:text-blue-700">Home</a></li>
-              <li><a href="#browse" className="transition hover:text-blue-700">Browse Found Items</a></li>
-              <li><a href="#how-it-works" className="transition hover:text-blue-700">How It Works</a></li>
+              <li><Link to="/" className="transition hover:text-blue-700">Home</Link></li>
+              <li><Link to="/browse-found-items" className="transition hover:text-blue-700">Browse Found Items</Link></li>
+              <li><Link to="/how-it-works" className="transition hover:text-blue-700">How It Works</Link></li>
               <li><a href="#report-lost" className="transition hover:text-blue-700">Report a Lost Item</a></li>
               <li><a href="#report-found" className="transition hover:text-blue-700">Report a Found Item</a></li>
             </ul>
