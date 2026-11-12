@@ -53,12 +53,7 @@ export default function Footer() {
               <p><span className="text-slate-400 font-normal">Office Desk:</span> <span className="font-medium text-slate-700">09123456789</span></p>
               <p><span className="text-slate-400 font-normal">Public Safety Dispatch:</span> <span className="font-medium text-slate-700">Ext. 4402</span></p>
               <p><span className="text-slate-400 font-normal">Email:</span> <a href="mailto:UCcustody@gmail.com" className="font-medium text-blue-600 hover:underline">UCcustody@gmail.com</a></p>
-            </div>
-            <div className="mt-4">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Vault Hours: Mon-Fri 8:30 AM - 5:00 PM
-              </span>
+              <p><span className="text-slate-400 font-normal">Vault Hours:</span> <span className="font-medium text-slate-700">Mon-Fri 8:30 AM - 5:00 PM</span></p>
             </div>
           </div>
 
