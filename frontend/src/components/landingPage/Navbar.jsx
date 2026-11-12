@@ -61,7 +61,7 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center space-x-3">
             <button type="button" className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-300 hover:bg-slate-50 rounded-lg transition shadow-sm">Report Lost</button>
             <button type="button" className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-300 hover:bg-slate-50 rounded-lg transition shadow-sm">Report Found</button>
-            <button type="button" className="px-4 py-2 text-xs font-semibold text-slate-700 hover:text-slate-950 transition">Sign In</button>
+            <NavLink to="/auth" className="px-4 py-2 text-xs font-semibold text-slate-700 hover:text-slate-950 transition">Sign In</NavLink>
           </div>
 
           <div className="flex md:hidden">
@@ -94,7 +94,7 @@ export default function Navbar() {
           <div className="pt-2 flex flex-col gap-2">
             <button className="w-full text-center py-2 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-semibold transition">Report Lost</button>
             <button className="w-full text-center py-2 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-semibold transition">Report Found</button>
-            <button className="w-full text-center py-2 px-4 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">Sign In</button>
+            <NavLink to="/auth" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-2 px-4 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">Sign In</NavLink>
           </div>
         </div>
       )}
