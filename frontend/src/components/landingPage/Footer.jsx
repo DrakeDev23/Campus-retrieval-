@@ -40,8 +40,8 @@ export default function Footer() {
               <li><Link to="/" className="transition hover:text-blue-700">Home</Link></li>
               <li><Link to="/browse-found-items" className="transition hover:text-blue-700">Browse Found Items</Link></li>
               <li><Link to="/how-it-works" className="transition hover:text-blue-700">How It Works</Link></li>
-              <li><a href="#report-lost" className="transition hover:text-blue-700">Report a Lost Item</a></li>
-              <li><a href="#report-found" className="transition hover:text-blue-700">Report a Found Item</a></li>
+              <li><Link to="/login" className="transition hover:text-blue-700">Report a Lost Item</Link></li>
+              <li><Link to="/login" className="transition hover:text-blue-700">Report a Found Item</Link></li>
             </ul>
           </div>
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Search } from './icons';
+import { Search } from './icons';
 
 export default function BrandPanel() {
   return (
@@ -28,19 +28,6 @@ export default function BrandPanel() {
             trusted place.
           </p>
         </div>
-      </div>
-
-      <div className="pt-8">
-        <Link
-          to="/"
-          className="group inline-flex items-center gap-2 rounded-lg text-sm font-medium text-blue-200 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
-          aria-label="Back to landing page"
-        >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-700/60 text-blue-200 transition group-hover:bg-blue-700 group-hover:text-white">
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-          </span>
-          <span>Back to Landing Page</span>
-        </Link>
       </div>
     </aside>
   );

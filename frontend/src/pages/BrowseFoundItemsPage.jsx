@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import campusBg from '../assets/uc.jpg';
 import Breadcrumb from '../components/common/Breadcrumb';
@@ -108,6 +108,106 @@ const ITEMS = [
     custody: 'Athletics Equipment Desk',
     buttonType: 'claim',
   },
+  {
+    title: 'Apple iPad Pro 11" with Pencil',
+    category: 'Electronics',
+    status: 'In Custody',
+    description: 'Silver 128GB iPad inside dark green magnetic folio case with 2nd gen Apple Pencil attached.',
+    foundTime: 'Nov 07, 04:30 PM',
+    location: 'Main Library',
+    custody: 'Locker #02 (Self-Service)',
+    buttonType: 'claim',
+  },
+  {
+    title: 'Leather Bi-Fold Wallet (Brown)',
+    category: 'IDs & Wallets',
+    status: 'Verification Required',
+    description: 'Distressed brown leather wallet containing cash card and metro transit pass.',
+    foundTime: 'Nov 06, 01:15 PM',
+    location: 'Student Center',
+    custody: 'Campus Security Hub',
+    buttonType: 'claim',
+  },
+  {
+    title: 'Ray-Ban Aviator Sunglasses',
+    category: 'Clothing & Apparel',
+    status: 'In Custody',
+    description: 'Gold-frame classic aviator sunglasses in black semi-rigid carrying case.',
+    foundTime: 'Nov 06, 11:00 AM',
+    location: 'Science & Tech Quad',
+    custody: 'Locker #07 (Self-Service)',
+    buttonType: 'claim',
+  },
+  {
+    title: 'Logitech MX Master 3S Mouse',
+    category: 'Electronics',
+    status: 'Retrieval Authorized',
+    description: 'Ergonomic wireless mouse in pale gray finish, left at computer workstation 14.',
+    foundTime: 'Nov 05, 03:45 PM',
+    location: 'Main Library',
+    custody: 'Registrar Front Desk',
+    buttonType: 'claim',
+  },
+  {
+    title: 'Calculus: Early Transcendentals',
+    category: 'Books & Stationery',
+    status: 'In Custody',
+    description: 'Hardcover mathematics textbook with yellow highlighter marks throughout chapters 3 and 4.',
+    foundTime: 'Nov 05, 09:20 AM',
+    location: 'Math & Sciences Bldg',
+    custody: 'Locker #05 (Self-Service)',
+    buttonType: 'claim',
+  },
+  {
+    title: 'Hydro Flask 32oz (Pacific Blue)',
+    category: 'Drinkware',
+    status: 'In Custody',
+    description: 'Wide-mouth blue flask with straw lid and campus stickers.',
+    foundTime: 'Nov 04, 02:00 PM',
+    location: 'Gymnasium',
+    custody: 'Athletics Equipment Desk',
+    buttonType: 'claim',
+  },
+  {
+    title: 'Under Armour Gym Duffel Bag',
+    category: 'Bags & Backpacks',
+    status: 'Verification Required',
+    description: 'Medium black sports duffel with shoulder strap, left in locker room bench area.',
+    foundTime: 'Nov 03, 06:15 PM',
+    location: 'Gymnasium',
+    custody: 'Athletics Equipment Desk',
+    buttonType: 'claim',
+  },
+  {
+    title: 'Dorm Room Brass Key on UC Keychain',
+    category: 'Keys & Fobs',
+    status: 'Retrieval Authorized',
+    description: 'Single brass cylinder room key with rubber tiger head novelty keychain.',
+    foundTime: 'Nov 03, 10:40 AM',
+    location: 'Science & Tech Quad',
+    custody: 'Campus Security Hub',
+    buttonType: 'claim',
+  },
+  {
+    title: 'Anker 65W GaN USB-C Charger',
+    category: 'Electronics',
+    status: 'In Custody',
+    description: 'Compact foldable-prong white wall charger with 6ft braided USB-C cable.',
+    foundTime: 'Nov 02, 05:20 PM',
+    location: 'Student Center',
+    custody: 'Locker #11 (Self-Service)',
+    buttonType: 'claim',
+  },
+  {
+    title: 'Vintage Denim Jacket with UC Pin',
+    category: 'Clothing & Apparel',
+    status: 'Retrieved',
+    description: 'Light-wash oversized denim trucker jacket with enamel campus tiger badge on lapel.',
+    foundTime: 'Nov 01, 01:10 PM',
+    location: 'Student Center',
+    custody: 'Reunited with Owner',
+    buttonType: 'closed',
+  },
 ];
 
 const LOCATIONS = ['All Locations', ...Array.from(new Set(ITEMS.map((item) => item.location)))];
@@ -123,6 +223,9 @@ export default function BrowseFoundItemsPage() {
   const [status, setStatus] = useState('All Statuses');
   const [category, setCategory] = useState('All');
   const [view, setView] = useState('grid');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 9;
 
   const items = useMemo(
     () =>
@@ -144,6 +247,18 @@ export default function BrowseFoundItemsPage() {
       return true;
     });
   }, [items, category, location, status, searchQuery]);
+
+  // Reset to first page whenever search filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [category, location, status, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = useMemo(
+    () => filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE),
+    [filteredItems, startIndex]
+  );
 
   return (
     <section className="relative overflow-hidden isolate pt-8 pb-24 px-4 sm:px-6 lg:px-8">
@@ -263,8 +378,15 @@ export default function BrowseFoundItemsPage() {
           </div>
         </div>
 
-        <div className="mb-5 text-sm font-medium text-slate-500">
-          Showing {filteredItems.length} of {items.length} items
+        <div className="mb-5 text-sm font-medium text-slate-500 flex flex-wrap items-center justify-between gap-2">
+          <span>
+            Showing {filteredItems.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, filteredItems.length)} of {filteredItems.length} items
+          </span>
+          {totalPages > 1 && (
+            <span className="text-xs text-slate-400">
+              Page {currentPage} of {totalPages}
+            </span>
+          )}
         </div>
 
         {filteredItems.length === 0 ? (
@@ -280,10 +402,73 @@ export default function BrowseFoundItemsPage() {
                 : 'grid grid-cols-1 gap-4 max-w-3xl'
             }
           >
-            {filteredItems.map((item) => (
-              <ItemCard key={item.title} item={item} />
+            {paginatedItems.map((item) => (
+              <ItemCard key={item.title} item={item} minimal />
             ))}
           </div>
+        )}
+
+        {totalPages > 1 && (
+          <nav
+            role="navigation"
+            aria-label="Pagination Navigation"
+            className="mt-10 flex items-center justify-center border-t border-slate-200 pt-6"
+          >
+            <div className="inline-flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentPage((p) => Math.max(p - 1, 1));
+                  window.scrollTo({ top: 350, behavior: 'smooth' });
+                }}
+                disabled={currentPage === 1}
+                className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 shadow-2xs cursor-pointer"
+                aria-label="Previous page"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+                <span>Previous</span>
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    onClick={() => {
+                      setCurrentPage(pageNumber);
+                      window.scrollTo({ top: 350, behavior: 'smooth' });
+                    }}
+                    aria-current={currentPage === pageNumber ? 'page' : undefined}
+                    className={`h-9 w-9 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      currentPage === pageNumber
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentPage((p) => Math.min(p + 1, totalPages));
+                  window.scrollTo({ top: 350, behavior: 'smooth' });
+                }}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 shadow-2xs cursor-pointer"
+                aria-label="Next page"
+              >
+                <span>Next</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+            </div>
+          </nav>
         )}
       </div>
     </section>

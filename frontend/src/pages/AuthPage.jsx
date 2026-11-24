@@ -70,6 +70,20 @@ export default function AuthPage({ initialMode }) {
                 Campus<span className="text-blue-700">Retrieval</span>
               </span>
             </Link>
+
+            {location.state?.claimItem && (
+              <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-xs">
+                <svg className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-amber-900">Sign in to claim item</p>
+                  <p className="mt-0.5 text-xs text-amber-800">
+                    You must be signed in with your university account to claim <strong>"{location.state.claimItem}"</strong>. Please sign in below.
+                  </p>
+                </div>
+              </div>
+            )}
             <div
               role="tablist"
               aria-label="Authentication mode"

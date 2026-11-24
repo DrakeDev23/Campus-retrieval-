@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { ArrowRight, IdCard, Lock, Mail, User } from './icons';
 import { CheckboxField, FormField, PasswordField, PrimaryButton } from './FormField';
 import {
@@ -30,6 +32,9 @@ const validators = {
 };
 
 export default function RegisterForm({ onSwitchMode }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [values, setValues] = useState(INITIAL);
   const [errors, setErrors] = useState({});
   const [showPasswords, setShowPasswords] = useState(false);
@@ -67,12 +72,22 @@ export default function RegisterForm({ onSwitchMode }) {
       e.currentTarget.querySelector('[aria-invalid="true"]')?.focus();
       return;
     }
-    // Frontend-only prototype: simulate a request, no account is created.
+    // Simulate account registration and set session
     setLoading(true);
     setTimeout(() => {
+      login({
+        studentId: values.studentId,
+        email: values.email,
+        firstName: values.firstName,
+        lastName: values.lastName,
+      });
       setLoading(false);
       setSuccess(true);
-    }, 800);
+      const destination = location.state?.from || '/dashboard';
+      setTimeout(() => {
+        navigate(destination, { replace: true });
+      }, 700);
+    }, 600);
   };
 
   const shared = { onChange: handleChange, onBlur: handleBlur };
@@ -86,11 +101,8 @@ export default function RegisterForm({ onSwitchMode }) {
       </header>
 
       {success && (
-        <div role="status" className="mb-5 flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3 text-sm text-blue-900">
-          <span>
-            Prototype only: no account was created. In the full system, a verification link will be sent to{' '}
-            <strong className="font-semibold">{values.email.trim()}</strong>.
-          </span>
+        <div role="status" className="mb-5 flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-900">
+          <span>Account created successfully! Redirecting...</span>
         </div>
       )}
 
