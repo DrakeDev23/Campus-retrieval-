@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const NAV_LINKS = [
   { to: '/', label: 'Home', end: true },
@@ -29,6 +30,7 @@ const mobileLinkClasses = ({ isActive }) =>
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAuthenticated, user, logout } = useAuth();
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/80 transition-colors">
@@ -59,9 +61,36 @@ export default function Navbar() {
           </div>
 
           <div className="hidden lg:flex items-center space-x-3">
-            <button type="button" className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-300 hover:bg-slate-50 rounded-lg transition shadow-sm">Report Lost</button>
-            <button type="button" className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-300 hover:bg-slate-50 rounded-lg transition shadow-sm">Report Found</button>
-            <NavLink to="/auth" className="px-4 py-2 text-xs font-semibold text-slate-700 hover:text-slate-950 transition">Sign In</NavLink>
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/dashboard"
+                  className="px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-sm"
+                >
+                  Dashboard
+                </Link>
+                <span className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 rounded-lg border border-slate-200">
+                  ID: <span className="font-semibold text-slate-900">{user?.studentId || 'Student'}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 border border-rose-200 hover:bg-rose-50 rounded-lg transition shadow-sm cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-300 hover:bg-slate-50 rounded-lg transition shadow-sm"
+                >
+                  Report Found
+                </Link>
+                <NavLink to="/login" className="px-4 py-2 text-xs font-semibold text-slate-700 hover:text-slate-950 transition">Sign In</NavLink>
+              </div>
+            )}
           </div>
 
           <div className="flex md:hidden">
@@ -92,9 +121,43 @@ export default function Navbar() {
             </NavLink>
           ))}
           <div className="pt-2 flex flex-col gap-2">
-            <button className="w-full text-center py-2 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-semibold transition">Report Lost</button>
-            <button className="w-full text-center py-2 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-semibold transition">Report Found</button>
-            <NavLink to="/auth" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-2 px-4 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">Sign In</NavLink>
+            {isAuthenticated ? (
+              <div className="flex flex-col gap-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-700">
+                    ID: <span className="font-semibold text-slate-900">{user?.studentId || 'Student'}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-3 py-1 text-xs font-semibold text-rose-600 hover:text-rose-700 border border-rose-200 hover:bg-rose-50 rounded-md transition"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition"
+                >
+                  Go to Student Dashboard
+                </Link>
+              </div>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2 px-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-semibold transition block"
+                >
+                  Report Found
+                </Link>
+                <NavLink to="/login" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-2 px-4 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold">Sign In</NavLink>
+              </>
+            )}
           </div>
         </div>
       )}

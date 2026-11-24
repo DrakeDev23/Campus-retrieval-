@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { ArrowRight, IdCard, Lock } from './icons';
 import { CheckboxField, FormField, PasswordField, PrimaryButton } from './FormField';
 import { validateLoginPassword, validateLoginStudentId } from './validation';
@@ -6,6 +8,9 @@ import { validateLoginPassword, validateLoginStudentId } from './validation';
 const INITIAL = { studentId: '', password: '', remember: false };
 
 export default function LoginForm({ onSwitchMode }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [values, setValues] = useState(INITIAL);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -40,12 +45,17 @@ export default function LoginForm({ onSwitchMode }) {
       e.currentTarget.querySelector('[aria-invalid="true"]')?.focus();
       return;
     }
-    // Frontend-only prototype: simulate a request, no real authentication.
+    // Simulate authentication and set session state
     setLoading(true);
     setTimeout(() => {
+      login({ studentId: values.studentId });
       setLoading(false);
       setSuccess(true);
-    }, 800);
+      const destination = location.state?.from || '/dashboard';
+      setTimeout(() => {
+        navigate(destination, { replace: true });
+      }, 700);
+    }, 600);
   };
 
   return (
@@ -56,8 +66,8 @@ export default function LoginForm({ onSwitchMode }) {
       </header>
 
       {success && (
-        <div role="status" className="mb-5 flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-3 text-sm text-blue-900">
-          <span>Prototype only: credentials look valid, but no sign-in is performed yet.</span>
+        <div role="status" className="mb-5 flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-sm text-emerald-900">
+          <span>Signed in successfully! Redirecting...</span>
         </div>
       )}
 

@@ -48,13 +48,21 @@ export default function Hero() {
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              <button type="button" className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-150 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-150 flex items-center gap-2 cursor-pointer"
+              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
                 Report Lost Item
               </button>
-              <button type="button" className="px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-semibold text-sm border border-slate-300/80 shadow-sm transition-all duration-150">
+              <button
+                type="button"
+                onClick={() => navigate('/browse-found-items')}
+                className="px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-semibold text-sm border border-slate-300/80 shadow-sm transition-all duration-150"
+              >
                 Browse Found Catalog
               </button>
             </div>

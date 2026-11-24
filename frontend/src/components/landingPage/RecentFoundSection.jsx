@@ -161,7 +161,7 @@ export default function RecentFoundSection() {
           >
             {items.map((item) => (
               <div key={item.title} className="w-full shrink-0 snap-center">
-                <ItemCard item={item} />
+                <ItemCard item={item} minimal />
               </div>
             ))}
           </div>
@@ -182,7 +182,7 @@ export default function RecentFoundSection() {
         </div>
 
         <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item) => <ItemCard key={item.title} item={item} />)}
+          {items.map((item) => <ItemCard key={item.title} item={item} minimal />)}
         </div>
       </div>
     </section>
