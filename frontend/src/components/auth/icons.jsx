@@ -1,10 +1,5 @@
 import React from 'react';
 
-/**
- * Lucide icon set (https://lucide.dev), inlined because the `lucide-react`
- * package could not be installed offline. Paths are the official Lucide ones,
- * so swapping to `import { Mail } from 'lucide-react'` later is a drop-in change.
- */
 function createIcon(children) {
   return function Icon({ className = 'h-5 w-5', ...props }) {
     return (

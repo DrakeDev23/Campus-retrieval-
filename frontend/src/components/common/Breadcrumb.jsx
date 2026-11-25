@@ -1,10 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-/**
- * Accessible breadcrumb trail.
- * items: Array<{ label: string, to?: string }> — omit `to` on the current page.
- */
 export default function Breadcrumb({ items }) {
   return (
     <nav aria-label="Breadcrumb" className="text-sm">

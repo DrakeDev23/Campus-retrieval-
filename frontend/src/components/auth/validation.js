@@ -1,5 +1,3 @@
-// Prototype-only validation. Real rules (allowed university domains, student
-// ID format) should be confirmed with the university and enforced server-side.
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -22,11 +20,10 @@ export function validateStudentId(value) {
   return '';
 }
 
-// Login accepts digits and hyphens (e.g. 2021-12345). Exact format to be
-// confirmed with the university; real checks belong on the backend.
 export function validateLoginStudentId(value) {
   const v = value.trim();
   if (!v) return 'Enter your Student ID Number.';
+  if (v.toLowerCase() === 'admin') return '';
   if (!/^[0-9-]+$/.test(v) || !/\d/.test(v)) return 'Student ID can only contain numbers and hyphens.';
   if (v.replace(/-/g, '').length < 6) return 'Student ID looks too short. Check and try again.';
   return '';

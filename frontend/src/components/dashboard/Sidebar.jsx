@@ -9,43 +9,62 @@ import {
   FileText,
   PackageCheck,
   Clock,
-  Bell,
   Settings,
   ShieldCheck,
-  Building,
-  Phone,
-  Mail,
   LogOut,
-  X,
+  Menu,
+  ArrowRight,
 } from './icons';
 
-export const NAV_ITEMS = [
+export const STUDENT_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'report-lost', label: 'Report Lost Item', icon: PlusCircle, isAction: true },
   { id: 'report-found', label: 'Report Found Item', icon: PackagePlus, isAction: true },
-  { id: 'browse', label: 'Browse Campus Items', icon: Search, isLink: '/browse-found-items' },
+  { id: 'browse', label: 'Browse Campus Items', icon: Search },
   { id: 'my-lost-reports', label: 'My Lost Reports', icon: FileText },
   { id: 'my-found-reports', label: 'My Found Reports', icon: PackageCheck },
   { id: 'claims-tracking', label: 'My Claims & Tracking', icon: Clock },
-  { id: 'notifications', label: 'Notifications', icon: Bell, badgeCount: 2 },
   { id: 'settings', label: 'Profile & Settings', icon: Settings },
 ];
 
+export const ADMIN_NAV_ITEMS = [
+  { id: 'admin-claims', label: 'Claims Verification', icon: ShieldCheck },
+  { id: 'admin-items', label: 'Found Items Custody', icon: PackageCheck },
+  { id: 'admin-browse', label: 'Browse Public Catalog', icon: Search },
+];
+
+export const NAV_ITEMS = STUDENT_NAV_ITEMS;
+
 export default function Sidebar({
+  isOpen = true,
+  onToggle,
+  onOpen,
+  onClose,
   activeTab,
   onSelectTab,
   profile,
   unreadCount = 2,
-  mobileOpen = false,
+  messageUnreadCount = 0,
+  mobileOpen,
   onCloseMobile,
   onOpenReportLost,
   onOpenReportFound,
+  mode = 'student',
 }) {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
 
+  const isSidebarOpen = typeof mobileOpen !== 'undefined' ? mobileOpen : isOpen;
+  const handleToggle = onToggle || onClose || onCloseMobile;
+  const handleClose = onClose || onCloseMobile;
+  const handleOpen = onOpen || onToggle;
+
+  const currentNavItems = mode === 'admin' ? ADMIN_NAV_ITEMS : STUDENT_NAV_ITEMS;
+
   const handleNavClick = (item) => {
-    if (onCloseMobile) onCloseMobile();
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      if (handleClose) handleClose();
+    }
     if (item.isLink) {
       navigate(item.isLink);
       return;
@@ -58,81 +77,139 @@ export default function Sidebar({
       if (onOpenReportFound) onOpenReportFound();
       return;
     }
-    onSelectTab(item.id);
+    if (onSelectTab) onSelectTab(item.id);
   };
 
-  const displayName = profile?.fullName || (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Jane G. Doe');
-  const displayId = profile?.studentId || user?.studentId || '2024-08912';
-  const displayCourse = profile?.course || 'BS Computer Science • 3rd Year';
-  const initials = displayName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase() || 'ST';
+  const handleCollapsedNavClick = (item) => {
+    if (handleOpen) handleOpen();
+    handleNavClick(item);
+  };
+
+  const displayName =
+    profile?.fullName ||
+    user?.fullName ||
+    (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : mode === 'admin' ? 'Officer R. Santos' : 'Jane G. Doe');
+
+  const displayId = profile?.studentId || user?.studentId || (mode === 'admin' ? 'ADMIN-SEC-402' : '2024-08912');
+  const roleBadge =
+    profile?.badge ||
+    user?.badge ||
+    (mode === 'admin' || user?.role === 'admin' ? 'Security Desk Administrator' : 'Verified Student');
+
+  const initials =
+    displayName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase() || (mode === 'admin' ? 'AD' : 'ST');
+
+  const handleSignOut = () => {
+    logout();
+    navigate('/');
+  };
+
+  const profileFooter = (
+    <div className="p-3.5 border-t border-slate-200 bg-slate-50/80 text-xs space-y-2">
+      <div className="p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="relative shrink-0">
+              <div
+                className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center text-xs shadow-xs text-white ${
+                  mode === 'admin' ? 'bg-amber-600' : 'bg-blue-600'
+                }`}
+              >
+                {initials}
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xs font-bold text-slate-900 truncate leading-tight">
+                {displayName}
+              </h3>
+              <p className="text-[11px] text-slate-500 font-mono truncate">{displayId}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer shrink-0"
+            title="Sign Out"
+            aria-label="Sign Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+          <span
+            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+              mode === 'admin'
+                ? 'text-amber-800 bg-amber-50/90 border-amber-200'
+                : 'text-emerald-800 bg-emerald-50/90 border-emerald-200'
+            }`}
+          >
+            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+            <span>{roleBadge}</span>
+          </span>
+
+          <Link
+            to="/"
+            className="text-[10px] font-semibold text-slate-500 hover:text-blue-700 flex items-center gap-0.5 transition"
+            title="Go to Landing Page"
+          >
+            <span>Landing Page</span>
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-slate-200 w-72 select-none">
-      {/* Top Brand & User Profile */}
       <div className="p-5 border-b border-slate-200/80">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs font-bold text-base transition group-hover:bg-blue-700">
-              CR
+            <span
+              className={`flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-xs font-bold text-base transition ${
+                mode === 'admin' ? 'bg-amber-600 group-hover:bg-amber-700' : 'bg-blue-600 group-hover:bg-blue-700'
+              }`}
+            >
+              {mode === 'admin' ? 'AD' : 'CR'}
             </span>
             <div className="flex flex-col leading-tight">
               <span className="text-base font-bold text-slate-900 tracking-tight">
-                Campus<span className="text-blue-600">Retrieval</span>
+                Campus<span className={mode === 'admin' ? 'text-amber-600' : 'text-blue-600'}>Retrieval</span>
               </span>
               <span className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase">
-                Student Portal
+                {mode === 'admin' ? 'Admin Verification' : 'Student Portal'}
               </span>
             </div>
           </Link>
 
-          {mobileOpen && (
+          {handleToggle && (
             <button
               type="button"
-              onClick={onCloseMobile}
-              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 lg:hidden"
-              aria-label="Close sidebar"
+              onClick={handleToggle}
+              className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              aria-label="Collapse sidebar"
+              title="Collapse sidebar"
             >
-              <X className="w-5 h-5" />
+              <Menu className="w-5 h-5" />
             </button>
           )}
         </div>
-
-        {/* User Profile Card */}
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/70">
-          <div className="relative">
-            <div className="w-11 h-11 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-xs">
-              {initials}
-            </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-sm font-bold text-slate-900 truncate">{displayName}</h3>
-            </div>
-            <p className="text-xs font-medium text-slate-500 truncate">ID: {displayId}</p>
-            <div className="flex items-center gap-1 mt-1">
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                Verified Student
-              </span>
-            </div>
-          </div>
-        </div>
-        <p className="mt-2 text-[11px] text-slate-400 px-1 truncate">{displayCourse}</p>
       </div>
 
-      {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         <p className="px-3 pb-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-          Navigation
+          {mode === 'admin' ? 'Administrator Controls' : 'Navigation'}
         </p>
-        {NAV_ITEMS.map((item) => {
+        {currentNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
@@ -142,7 +219,11 @@ export default function Sidebar({
               onClick={() => handleNavClick(item)}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-xs'
+                  ? mode === 'admin'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-blue-600 text-white shadow-xs'
+                  : item.isAction
+                  ? 'text-blue-700 bg-blue-50/60 hover:bg-blue-100/70'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
               }`}
             >
@@ -150,7 +231,22 @@ export default function Sidebar({
                 <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </div>
-              {item.badgeCount && unreadCount > 0 && (
+              {messageUnreadCount > 0 && (item.id === 'claims-tracking' || item.id === 'admin-claims') ? (
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isActive
+                      ? mode === 'admin'
+                        ? 'bg-white text-amber-800'
+                        : 'bg-white text-blue-700'
+                      : mode === 'admin'
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-blue-600 text-white'
+                  }`}
+                  title={`${messageUnreadCount} unread message(s)`}
+                >
+                  {messageUnreadCount}
+                </span>
+              ) : item.badgeCount && unreadCount > 0 ? (
                 <span
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     isActive ? 'bg-white text-blue-700' : 'bg-blue-100 text-blue-700'
@@ -158,61 +254,132 @@ export default function Sidebar({
                 >
                   {unreadCount}
                 </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </nav>
+
+      {profileFooter}
+    </div>
+  );
+
+  const collapsedContent = (
+    <div className="flex flex-col h-full bg-white border-r border-slate-200 w-20 select-none items-center py-4 justify-between transition-all duration-300">
+      <div className="flex flex-col items-center gap-3 w-full px-2 pb-4 border-b border-slate-200/80">
+        <Link
+          to="/"
+          className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-xs font-bold text-base transition ${
+            mode === 'admin' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+          title={mode === 'admin' ? 'CampusRetrieval Admin Portal' : 'CampusRetrieval Student Portal'}
+        >
+          {mode === 'admin' ? 'AD' : 'CR'}
+        </Link>
+
+        {handleToggle && (
+          <button
+            type="button"
+            onClick={handleToggle}
+            className="p-2 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+
+      <nav className="flex-1 overflow-y-auto py-3 space-y-1.5 w-full flex flex-col items-center px-2">
+        {currentNavItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleCollapsedNavClick(item)}
+              title={`${item.label} (Click to open)`}
+              className={`w-11 h-11 flex items-center justify-center rounded-xl text-xs font-semibold transition cursor-pointer relative ${
+                isActive
+                  ? mode === 'admin'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Icon className="w-5 h-5 shrink-0" />
+              {messageUnreadCount > 0 && (item.id === 'claims-tracking' || item.id === 'admin-claims') && (
+                <span className={`absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full text-white text-[9px] font-bold flex items-center justify-center border-2 border-white ${
+                  mode === 'admin' ? 'bg-amber-600' : 'bg-blue-600'
+                }`}>
+                  {messageUnreadCount > 9 ? '9+' : messageUnreadCount}
+                </span>
               )}
             </button>
           );
         })}
       </nav>
 
-      {/* Bottom Section - Campus Lost & Found Office Info */}
-      <div className="p-4 border-t border-slate-200 bg-slate-50/70 text-xs text-slate-600 space-y-3">
-        <div className="flex items-start gap-2.5">
-          <Building className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-          <div className="min-w-0">
-            <p className="font-bold text-slate-900 text-xs">Lost &amp; Found Office</p>
-            <p className="text-[11px] text-slate-500">Administration Hall, Rm 102</p>
-            <p className="text-[10px] text-slate-400">Mon–Fri: 8:30 AM – 5:00 PM</p>
+      <div className="pt-3 border-t border-slate-200/80 w-full flex flex-col items-center gap-2.5 px-2">
+        <div
+          onClick={handleOpen}
+          className="relative cursor-pointer hover:scale-105 transition"
+          title={`Click to open sidebar • ${displayName} (${displayId})`}
+        >
+          <div
+            className={`w-10 h-10 rounded-xl text-white font-bold flex items-center justify-center text-xs shadow-xs ${
+              mode === 'admin' ? 'bg-amber-600' : 'bg-blue-600'
+            }`}
+          >
+            {initials}
           </div>
+          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
         </div>
 
-        <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-[11px]">
-          <div className="flex items-center gap-1.5 text-slate-500">
-            <Phone className="w-3 h-3 text-slate-400" />
-            <span>0912-345-6789</span>
-          </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="inline-flex items-center gap-1 text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Sign Out
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          title={`Sign Out (${displayName})`}
+          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+          aria-label="Sign Out"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
 
   return (
     <>
-      {/* Desktop Fixed Sidebar */}
-      <aside className="hidden lg:block fixed inset-y-0 left-0 z-30 w-72">
-        {sidebarContent}
+      <aside
+        className={`hidden lg:block fixed inset-y-0 left-0 z-30 transition-all duration-300 ease-in-out shadow-xs ${
+          isSidebarOpen ? 'w-72' : 'w-20'
+        }`}
+      >
+        {isSidebarOpen ? sidebarContent : collapsedContent}
       </aside>
 
-      {/* Mobile Drawer Overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
-            onClick={onCloseMobile}
-            aria-hidden="true"
-          />
-          <div className="relative z-10 flex-1 flex max-w-xs w-full shadow-2xl animate-in slide-in-from-left duration-200">
-            {sidebarContent}
-          </div>
+      <div
+        className={`fixed inset-0 z-50 lg:hidden transition-all duration-300 ${
+          isSidebarOpen ? 'pointer-events-auto visible' : 'pointer-events-none invisible'
+        }`}
+      >
+        <div
+          className={`fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-300 ${
+            isSidebarOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={handleClose}
+          aria-hidden="true"
+        />
+        <div
+          className={`relative z-10 flex-1 flex max-w-xs w-full h-full shadow-2xl transition-transform duration-300 ease-in-out ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          {sidebarContent}
         </div>
-      )}
+      </div>
     </>
   );
 }

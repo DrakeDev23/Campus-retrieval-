@@ -1,20 +1,36 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { getClaims } from '../services/claimsService';
+import {
+  getNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  removeNotification,
+} from '../services/notificationsService';
+import { getUnreadCounts } from '../services/messagesService';
+import Toast from '../components/common/Toast';
 import Sidebar from '../components/dashboard/Sidebar';
 import Header from '../components/dashboard/Header';
 import WelcomeBanner from '../components/dashboard/WelcomeBanner';
 import StatsCards from '../components/dashboard/StatsCards';
 import QuickActions from '../components/dashboard/QuickActions';
 import ClaimTracker from '../components/dashboard/ClaimTracker';
+import ClaimsTrackingView from '../components/dashboard/ClaimsTrackingView';
 import ReportsTable from '../components/dashboard/ReportsTable';
 import NotificationsCard from '../components/dashboard/NotificationsCard';
 import ReportLostModal from '../components/dashboard/ReportLostModal';
 import ReportFoundModal from '../components/dashboard/ReportFoundModal';
+import BrowseFoundItemsPage from './BrowseFoundItemsPage';
+import { X, ImageIcon, Eye, PackageCheck } from '../components/dashboard/icons';
 import {
   INITIAL_STUDENT_PROFILE,
   INITIAL_STATS,
   INITIAL_ACTIVE_CLAIM,
+  INITIAL_CLAIMS_LIST,
   INITIAL_LOST_REPORTS,
   INITIAL_FOUND_REPORTS,
   INITIAL_NOTIFICATIONS,
@@ -22,39 +38,127 @@ import {
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { user: currentUser } = useCurrentUser();
+  const claimantId = currentUser?.studentId || currentUser?.id;
+  const [unauthToast, setUnauthToast] = useState(null);
 
-  // Navigation tab state
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  useEffect(() => {
+    if (location.state?.unauthorizedMessage) {
+      setUnauthToast({
+        type: 'error',
+        title: 'Access Restricted',
+        message: location.state.unauthorizedMessage,
+      });
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
 
-  // Modals
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('campus_sidebar_open');
+      if (stored !== null) return stored === 'true';
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
+
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('campus_sidebar_open', String(next));
+      }
+      return next;
+    });
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('campus_sidebar_open', 'false');
+    }
+  };
+
+  const openSidebar = () => {
+    setSidebarOpen(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('campus_sidebar_open', 'true');
+    }
+  };
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   const [isReportLostOpen, setIsReportLostOpen] = useState(false);
   const [isReportFoundOpen, setIsReportFoundOpen] = useState(false);
+  const [selectedFoundReport, setSelectedFoundReport] = useState(null);
 
-  // Live data states
+  const queryClient = useQueryClient();
   const [lostReports, setLostReports] = useState(INITIAL_LOST_REPORTS);
   const [foundReports, setFoundReports] = useState(INITIAL_FOUND_REPORTS);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [stats, setStats] = useState(INITIAL_STATS);
   const [activeClaim, setActiveClaim] = useState(INITIAL_ACTIVE_CLAIM);
 
-  // Student Profile
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['notifications', claimantId],
+    queryFn: () => getNotifications(claimantId),
+    initialData: INITIAL_NOTIFICATIONS,
+  });
+
+  const markAllMutation = useMutation({
+    mutationFn: () => markAllNotificationsRead(claimantId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const removeNotifMutation = useMutation({
+    mutationFn: (notifId) => removeNotification(notifId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const { data: messageUnreadCounts } = useQuery({
+    queryKey: ['messages', 'unread', claimantId],
+    queryFn: () => getUnreadCounts(currentUser),
+    refetchInterval: 10000,
+    enabled: Boolean(claimantId),
+  });
+
+  const { data: claimsList = [] } = useQuery({
+    queryKey: ['claims', claimantId],
+    queryFn: () => getClaims(claimantId),
+    enabled: Boolean(claimantId),
+  });
+
   const profile = {
     ...INITIAL_STUDENT_PROFILE,
-    fullName: user?.firstName && user?.lastName
-      ? `${user.firstName} ${user.lastName}`
-      : user?.studentId
-      ? `Student #${user.studentId}`
-      : INITIAL_STUDENT_PROFILE.fullName,
+    fullName:
+      user?.fullName ||
+      (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : INITIAL_STUDENT_PROFILE.fullName),
     studentId: user?.studentId || INITIAL_STUDENT_PROFILE.studentId,
     email: user?.email || INITIAL_STUDENT_PROFILE.email,
+    role: user?.role || 'student',
+    badge: user?.badge || INITIAL_STUDENT_PROFILE.badge,
   };
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
   const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    markAllMutation.mutate();
+  };
+
+  const handleRemoveNotification = (notifId) => {
+    removeNotifMutation.mutate(notifId);
   };
 
   const handleNewLostReport = (newReport) => {
@@ -69,6 +173,7 @@ export default function StudentDashboard() {
       hasMatch: false,
       matchedItemTitle: null,
       description: newReport.description,
+      image: newReport.image || null,
     };
 
     setLostReports((prev) => [formatted, ...prev]);
@@ -92,6 +197,7 @@ export default function StudentDashboard() {
       status: 'Verified in Custody',
       statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       description: newFound.description,
+      image: newFound.image || null,
     };
 
     setFoundReports((prev) => [formatted, ...prev]);
@@ -114,48 +220,59 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex font-sans antialiased">
-      {/* Fixed Vertical Left Sidebar */}
       <Sidebar
+        isOpen={sidebarOpen}
+        onToggle={toggleSidebar}
+        onOpen={openSidebar}
+        onClose={closeSidebar}
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         profile={profile}
         unreadCount={unreadCount}
-        mobileOpen={mobileSidebarOpen}
-        onCloseMobile={() => setMobileSidebarOpen(false)}
+        messageUnreadCount={messageUnreadCounts?.total || 0}
         onOpenReportLost={() => setIsReportLostOpen(true)}
         onOpenReportFound={() => setIsReportFoundOpen(true)}
       />
 
-      {/* Main Dashboard Content */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all">
-        {/* Top Header */}
+      <div
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
+          sidebarOpen ? 'lg:pl-72' : 'lg:pl-20'
+        }`}
+      >
         <Header
-          onOpenMobile={() => setMobileSidebarOpen(true)}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={toggleSidebar}
+          notifications={notifications}
           unreadCount={unreadCount}
-          onOpenNotifications={() => setActiveTab('notifications')}
+          onMarkAllRead={handleMarkAllRead}
+          onRemoveNotification={handleRemoveNotification}
+          onSelectNotification={(notif) => {
+            if (notif.deepLink) {
+              navigate(notif.deepLink);
+            }
+            markNotificationRead(notif.id);
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+          }}
+          onBrowse={() => setActiveTab('browse')}
           semester={profile.semester}
         />
 
-        {/* Dynamic Content Views */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
           {activeTab === 'dashboard' && (
             <>
-              {/* A. Welcome Banner */}
-              <WelcomeBanner semester={profile.semester} />
-
-              {/* B. Dashboard Statistics */}
-              <StatsCards stats={stats} onSelectCard={handleSelectStatCard} />
-
-              {/* C. Quick Actions */}
-              <QuickActions
+              <WelcomeBanner
+                semester={profile.semester}
                 onOpenReportLost={() => setIsReportLostOpen(true)}
                 onOpenReportFound={() => setIsReportFoundOpen(true)}
               />
 
-              {/* D. Active Claim Tracker */}
-              <ClaimTracker claim={activeClaim} />
+              <StatsCards stats={stats} />
 
-              {/* E & F. Active Lost Reports & Recent Notifications Grid */}
+              <ClaimTracker
+                claim={activeClaim}
+                onViewAllClaims={() => setActiveTab('claims-tracking')}
+              />
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2">
                   <ReportsTable
@@ -168,14 +285,28 @@ export default function StudentDashboard() {
                   <NotificationsCard
                     notifications={notifications}
                     onMarkAllRead={handleMarkAllRead}
-                    onOpenNotif={() => setActiveTab('notifications')}
+                    onRemoveNotification={handleRemoveNotification}
+                    onOpenNotif={(notif) => {
+                      if (notif?.deepLink) {
+                        navigate(notif.deepLink);
+                      } else {
+                        setActiveTab('notifications');
+                      }
+                      if (notif?.id) {
+                        markNotificationRead(notif.id);
+                        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+                      }
+                    }}
                   />
                 </div>
               </div>
             </>
           )}
 
-          {/* Sub-view: My Lost Reports */}
+          {activeTab === 'browse' && (
+            <BrowseFoundItemsPage inDashboard />
+          )}
+
           {activeTab === 'my-lost-reports' && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
@@ -203,7 +334,6 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Sub-view: My Found Reports */}
           {activeTab === 'my-found-reports' && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
@@ -235,14 +365,47 @@ export default function StudentDashboard() {
                         <th className="py-3 px-4">Location Found</th>
                         <th className="py-3 px-4">Custody Facility</th>
                         <th className="py-3 px-4">Verification Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {foundReports.map((item) => (
                         <tr key={item.id} className="hover:bg-slate-50/60 transition">
                           <td className="py-3.5 px-4">
-                            <span className="font-semibold text-slate-900 block text-xs">{item.itemName}</span>
-                            <span className="text-[11px] font-mono text-slate-400">Ref: {item.id}</span>
+                            <div className="flex items-center gap-3">
+                              {item.image ? (
+                                <div
+                                  onClick={() => setSelectedFoundReport(item)}
+                                  className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 shadow-2xs cursor-pointer group/fnd"
+                                >
+                                  <img
+                                    src={item.image}
+                                    alt={item.itemName}
+                                    className="w-full h-full object-cover group-hover/fnd:scale-105 transition duration-200"
+                                  />
+                                  <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover/fnd:opacity-100 transition flex items-center justify-center">
+                                    <Eye className="w-3.5 h-3.5 text-white" />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div
+                                  onClick={() => setSelectedFoundReport(item)}
+                                  className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center text-slate-400 shrink-0 cursor-pointer"
+                                >
+                                  <ImageIcon className="w-4 h-4 text-slate-300" />
+                                  <span className="text-[8px] text-slate-400 font-medium">No photo</span>
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <span
+                                  onClick={() => setSelectedFoundReport(item)}
+                                  className="font-semibold text-slate-900 block text-xs hover:text-blue-600 transition cursor-pointer truncate max-w-[200px]"
+                                >
+                                  {item.itemName}
+                                </span>
+                                <span className="text-[11px] font-mono text-slate-400">Ref: {item.id}</span>
+                              </div>
+                            </div>
                           </td>
                           <td className="py-3.5 px-4 text-slate-600 font-medium">{item.category}</td>
                           <td className="py-3.5 px-4 text-slate-600">{item.dateFound}</td>
@@ -254,6 +417,15 @@ export default function StudentDashboard() {
                               {item.status}
                             </span>
                           </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedFoundReport(item)}
+                              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition shadow-2xs cursor-pointer"
+                            >
+                              View Details
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -263,51 +435,110 @@ export default function StudentDashboard() {
             </div>
           )}
 
-          {/* Sub-view: My Claims & Tracking */}
-          {activeTab === 'claims-tracking' && (
-            <div className="space-y-6">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
-                <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                  My Claims & Real-Time Tracking
-                </h1>
-                <p className="text-xs text-slate-500 mt-1">
-                  Track student identity and ownership verification status across all active item claims
-                </p>
-              </div>
-
-              {/* Claim Tracker component */}
-              <ClaimTracker claim={activeClaim} />
-
-              {/* Claim Policy Reference */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
-                <h3 className="text-sm font-bold text-slate-900">
-                  Claim Verification Standards & Guidelines
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <p className="font-semibold text-slate-900 mb-1">1. Proof of Ownership</p>
-                    <p className="text-slate-500 leading-relaxed text-[11px]">
-                      Ensure you bring valid matching credentials (device unlock passcode, purchase receipt, serial registration, or physical description).
-                    </p>
+          {selectedFoundReport &&
+            typeof document !== 'undefined' &&
+            createPortal(
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) setSelectedFoundReport(null);
+                }}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="found-report-modal-title"
+              >
+                <div className="relative bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 my-auto">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                        <PackageCheck className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <h3 id="found-report-modal-title" className="text-base font-bold text-slate-900">
+                          Found Item Details
+                        </h3>
+                        <p className="text-xs text-slate-500">ID: {selectedFoundReport.id}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFoundReport(null)}
+                      className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+                      aria-label="Close details"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <p className="font-semibold text-slate-900 mb-1">2. University Photo ID</p>
-                    <p className="text-slate-500 leading-relaxed text-[11px]">
-                      Present your physical student identification card upon in-person retrieval at the Student Center Room 104.
-                    </p>
+
+                  <div className="my-5 space-y-3.5 text-xs">
+                    {selectedFoundReport.image && (
+                      <div className="w-full h-44 sm:h-48 rounded-xl overflow-hidden bg-slate-900 border border-slate-200 relative shadow-2xs">
+                        <img
+                          src={selectedFoundReport.image}
+                          alt={selectedFoundReport.itemName}
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute bottom-2.5 left-2.5 text-[10px] font-semibold bg-slate-900/80 text-white px-2.5 py-1 rounded-md backdrop-blur-xs">
+                          Attached Found Photo
+                        </span>
+                      </div>
+                    )}
+
+                    <div>
+                      <span className="text-slate-400 font-medium">Item Name</span>
+                      <p className="text-sm font-bold text-slate-900 mt-0.5">{selectedFoundReport.itemName}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div>
+                        <span className="text-slate-400 font-medium">Category</span>
+                        <p className="font-semibold text-slate-800">{selectedFoundReport.category}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-medium">Status</span>
+                        <p className="font-semibold text-slate-800">{selectedFoundReport.status}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-medium">Location Found</span>
+                        <p className="font-semibold text-slate-800">{selectedFoundReport.locationFound}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-medium">Date Found</span>
+                        <p className="font-semibold text-slate-800">{selectedFoundReport.dateFound}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 font-medium">Custody Facility</span>
+                      <p className="font-semibold text-slate-800 mt-0.5">{selectedFoundReport.custodyFacility}</p>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 font-medium">Item Description</span>
+                      <p className="mt-1 text-slate-700 leading-relaxed bg-slate-50/70 border border-slate-100 p-3 rounded-xl">
+                        {selectedFoundReport.description}
+                      </p>
+                    </div>
                   </div>
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <p className="font-semibold text-slate-900 mb-1">3. Handover Receipt</p>
-                    <p className="text-slate-500 leading-relaxed text-[11px]">
-                      A digital sign-off will be logged to finalize retrieval and automatically update your student dashboard status.
-                    </p>
+
+                  <div className="pt-4 border-t border-slate-100 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFoundReport(null)}
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
+                    >
+                      Close
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
+              </div>,
+              document.body
+            )}
+
+          {activeTab === 'claims-tracking' && (
+            <ClaimsTrackingView claims={claimsList} unreadCounts={messageUnreadCounts} />
           )}
 
-          {/* Sub-view: Notifications */}
           {activeTab === 'notifications' && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
@@ -331,30 +562,52 @@ export default function StudentDashboard() {
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs divide-y divide-slate-100 overflow-hidden">
-                {notifications.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`p-5 transition flex items-start gap-3 ${
-                      item.unread ? 'bg-blue-50/20' : 'bg-white hover:bg-slate-50/50'
-                    }`}
-                  >
-                    {item.unread && (
-                      <span className="w-2 h-2 rounded-full bg-blue-600 mt-1.5 shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-sm font-semibold text-slate-900">{item.title}</h4>
-                        <span className="text-[11px] text-slate-400 whitespace-nowrap">{item.timestamp}</span>
-                      </div>
-                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">{item.message}</p>
-                    </div>
+                {notifications.length === 0 ? (
+                  <div className="p-12 text-center text-slate-400 text-xs">
+                    No notifications available.
                   </div>
-                ))}
+                ) : (
+                  notifications.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        if (item.deepLink) navigate(item.deepLink);
+                        markNotificationRead(item.id);
+                        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+                      }}
+                      className={`p-5 transition flex items-start justify-between gap-4 cursor-pointer ${
+                        item.unread ? 'bg-blue-50/20' : 'bg-white hover:bg-slate-50/50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        {item.unread && (
+                          <span className="w-2 h-2 rounded-full bg-blue-600 mt-1.5 shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <h4 className="text-sm font-semibold text-slate-900">{item.title}</h4>
+                            <span className="text-[11px] text-slate-400 whitespace-nowrap">{item.timestamp}</span>
+                          </div>
+                          <p className="text-xs text-slate-600 mt-1 leading-relaxed">{item.message}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNotification(item.id)}
+                        className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition shrink-0 cursor-pointer"
+                        title="Remove notification"
+                        aria-label="Remove notification"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
 
-          {/* Sub-view: Profile & Settings */}
           {activeTab === 'settings' && (
             <div className="space-y-6">
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
@@ -435,7 +688,6 @@ export default function StudentDashboard() {
         </main>
       </div>
 
-      {/* Modals */}
       <ReportLostModal
         isOpen={isReportLostOpen}
         onClose={() => setIsReportLostOpen(false)}
@@ -447,6 +699,8 @@ export default function StudentDashboard() {
         onClose={() => setIsReportFoundOpen(false)}
         onSubmitSuccess={handleNewFoundReport}
       />
+
+      <Toast toast={unauthToast} onDismiss={() => setUnauthToast(null)} />
     </div>
   );
 }

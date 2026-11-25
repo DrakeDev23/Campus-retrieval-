@@ -49,9 +49,7 @@ export default function RegisterForm({ onSwitchMode }) {
 
     setErrors((prev) => {
       const updated = { ...prev };
-      // Only clear errors on edit; new errors appear on blur/submit.
       if (prev[name] && !validators[name](next)) updated[name] = '';
-      // Keep confirm-password in sync when the password changes.
       if (name === 'password' && prev.confirmPassword && !validators.confirmPassword(next)) {
         updated.confirmPassword = '';
       }
@@ -72,7 +70,6 @@ export default function RegisterForm({ onSwitchMode }) {
       e.currentTarget.querySelector('[aria-invalid="true"]')?.focus();
       return;
     }
-    // Simulate account registration and set session
     setLoading(true);
     setTimeout(() => {
       login({

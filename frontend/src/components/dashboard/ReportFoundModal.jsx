@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, PackagePlus, CheckCircle2, ShieldCheck, MapPin } from './icons';
+import ItemImageUpload from './ItemImageUpload';
 
 export default function ReportFoundModal({ isOpen, onClose, onSubmitSuccess }) {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ export default function ReportFoundModal({ isOpen, onClose, onSubmitSuccess }) {
     custodyStatus: 'Turned over to Campus Lost & Found Office',
     description: '',
     storageRef: '',
+    image: null,
   });
 
   const [errors, setErrors] = useState({});
@@ -70,6 +72,7 @@ export default function ReportFoundModal({ isOpen, onClose, onSubmitSuccess }) {
         locationFound: formData.locationFound,
         description: formData.description,
         custodyStatus: formData.custodyStatus,
+        image: formData.image,
         status: 'Verified by Staff',
         statusColor: 'emerald',
       };
@@ -94,7 +97,6 @@ export default function ReportFoundModal({ isOpen, onClose, onSubmitSuccess }) {
         className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-200 bg-slate-50/70">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-sm">
@@ -115,7 +117,6 @@ export default function ReportFoundModal({ isOpen, onClose, onSubmitSuccess }) {
           </button>
         </div>
 
-        {/* Content */}
         <div className="overflow-y-auto p-6 space-y-5">
           {submitted ? (
             <div className="py-10 text-center space-y-3">
@@ -228,6 +229,12 @@ export default function ReportFoundModal({ isOpen, onClose, onSubmitSuccess }) {
                 {errors.description && <p className="text-rose-600 text-[11px] mt-1">{errors.description}</p>}
               </div>
 
+              <ItemImageUpload
+                value={formData.image}
+                onChange={(img) => setFormData((prev) => ({ ...prev, image: img }))}
+                label="Found Item Photo"
+              />
+
               <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 flex items-start gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-blue-800 leading-relaxed">
@@ -238,7 +245,6 @@ export default function ReportFoundModal({ isOpen, onClose, onSubmitSuccess }) {
           )}
         </div>
 
-        {/* Footer */}
         {!submitted && (
           <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-slate-200 bg-slate-50/50">
             <button

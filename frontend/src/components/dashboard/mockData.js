@@ -64,6 +64,106 @@ export const INITIAL_ACTIVE_CLAIM = {
   custodyLocation: 'Locker #04 (Self-Service Station)',
 };
 
+export const INITIAL_CLAIMS_LIST = [
+  {
+    id: 'CLM-2026-0841',
+    itemName: 'Sony WH-1000XM4 Headphones',
+    category: 'Electronics',
+    referenceNo: 'CLM-2026-0841',
+    dateSubmitted: 'Nov 22, 2026',
+    currentStage: 3,
+    status: 'Verification in Progress',
+    statusBadge: 'bg-amber-50 text-amber-700 border-amber-200',
+    custodyLocation: 'Locker #04 (Self-Service Station)',
+    submittedProof: 'Bluetooth device pairing history on phone & matching serial prefix',
+    assignedOfficer: 'Officer R. Santos (Security Hub)',
+    timeline: [
+      { date: 'Nov 22, 2026 • 09:15 AM', stage: 1, title: 'Claim Filed', desc: 'Online claim filed by Jane Doe matching intake log FND-2026-0512.' },
+      { date: 'Nov 22, 2026 • 01:40 PM', stage: 2, title: 'Initial Desk Review', desc: 'Clerk validated intake record and verified locker custody compartment #04.' },
+      { date: 'Nov 23, 2026 • 10:20 AM', stage: 3, title: 'Ownership Verification (Active)', desc: 'Admin desk matching device MAC address & student identification records.' },
+    ],
+  },
+  {
+    id: 'CLM-2026-0710',
+    itemName: 'Navy Student ID Lanyard & Keycard',
+    category: 'Cards & Identification',
+    referenceNo: 'CLM-2026-0710',
+    dateSubmitted: 'Nov 14, 2026',
+    currentStage: 5,
+    status: 'Ready for Retrieval',
+    statusBadge: 'bg-blue-50 text-blue-700 border-blue-200',
+    custodyLocation: 'Central Security Desk (Room 102)',
+    submittedProof: 'Student photo ID record & matching enrollment number 2024-08912',
+    assignedOfficer: 'Supervisor E. Ramos',
+    pickupPass: {
+      code: 'PASS-710-KEY',
+      pin: '582-914',
+      station: 'Central Security Custody Desk, Room 102',
+      expiry: 'Valid until Nov 28, 2026 (5:00 PM)',
+      notes: 'Present this digital pass or PIN to the duty officer for immediate release.',
+    },
+    timeline: [
+      { date: 'Nov 14, 2026 • 11:00 AM', stage: 1, title: 'Claim Filed', desc: 'Online claim submitted for misplaced lanyard & campus access keycard.' },
+      { date: 'Nov 14, 2026 • 02:15 PM', stage: 2, title: 'Intake Cross-Check', desc: 'Desk clerk verified RFID serial against Registrar card database.' },
+      { date: 'Nov 15, 2026 • 09:30 AM', stage: 3, title: 'Ownership Confirmed', desc: 'Photo ID and enrollment credentials verified.' },
+      { date: 'Nov 15, 2026 • 03:45 PM', stage: 4, title: 'Admin Clearance Approved', desc: 'Campus security head authorized physical item release.' },
+      { date: 'Nov 16, 2026 • 08:00 AM', stage: 5, title: 'Pickup Pass Generated (Active)', desc: 'Digital pass issued. Ready for student counter retrieval.' },
+    ],
+  },
+  {
+    id: 'CLM-2026-0589',
+    itemName: 'Casio FX-991EX ClassWiz Calculator',
+    category: 'Books & Stationery',
+    referenceNo: 'CLM-2026-0589',
+    dateSubmitted: 'Oct 28, 2026',
+    currentStage: 6,
+    status: 'Successfully Retrieved',
+    statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    custodyLocation: 'Engineering Faculty Office Room 204',
+    submittedProof: 'Custom yellow name sticker with initials J.G.D. on battery cover',
+    assignedOfficer: 'Officer M. De Leon',
+    retrievalReceipt: {
+      releasedAt: 'Oct 30, 2026 • 03:45 PM',
+      releasedBy: 'Officer M. De Leon (Custody Officer #14)',
+      signedBy: 'Jane G. Doe (Digital Signature Confirmed)',
+      receiptNo: 'RCP-2026-9041',
+    },
+    timeline: [
+      { date: 'Oct 28, 2026', stage: 1, title: 'Claim Filed', desc: 'Claim submitted with description of sticker markings.' },
+      { date: 'Oct 29, 2026', stage: 2, title: 'Desk Review', desc: 'Checked inside engineering locker inventory.' },
+      { date: 'Oct 29, 2026', stage: 3, title: 'Verified', desc: 'Initials confirmed with student profile.' },
+      { date: 'Oct 30, 2026', stage: 4, title: 'Approved', desc: 'Item clearance granted.' },
+      { date: 'Oct 30, 2026', stage: 5, title: 'Ready for Pickup', desc: 'Notification sent.' },
+      { date: 'Oct 30, 2026 • 03:45 PM', stage: 6, title: 'Handover Completed', desc: 'Item successfully returned to student. Digital receipt logged.' },
+    ],
+  },
+  {
+    id: 'CLM-2026-0412',
+    itemName: 'Brown Leather Wallet (Fossil)',
+    category: 'Personal Belongings',
+    referenceNo: 'CLM-2026-0412',
+    dateSubmitted: 'Oct 12, 2026',
+    currentStage: 6,
+    status: 'Successfully Retrieved',
+    statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    custodyLocation: 'Main Library Circulation Desk',
+    submittedProof: 'Government ID card inside wallet matched student record',
+    assignedOfficer: 'Librarian J. Bautista',
+    retrievalReceipt: {
+      releasedAt: 'Oct 14, 2026 • 10:15 AM',
+      releasedBy: 'Librarian J. Bautista (Circulation Desk)',
+      signedBy: 'Jane G. Doe (Digital Signature Confirmed)',
+      receiptNo: 'RCP-2026-8812',
+    },
+    timeline: [
+      { date: 'Oct 12, 2026', stage: 1, title: 'Claim Filed', desc: 'Claim filed describing driver license & university library card.' },
+      { date: 'Oct 13, 2026', stage: 3, title: 'Verified', desc: 'Identity matched library database record.' },
+      { date: 'Oct 14, 2026', stage: 4, title: 'Approved', desc: 'Library administration signed retrieval clearance.' },
+      { date: 'Oct 14, 2026 • 10:15 AM', stage: 6, title: 'Handover Completed', desc: 'Reunited at library circulation counter. Student ID verified.' },
+    ],
+  },
+];
+
 export const INITIAL_LOST_REPORTS = [
   {
     id: 'REP-2026-1049',
@@ -76,6 +176,7 @@ export const INITIAL_LOST_REPORTS = [
     hasMatch: true,
     matchedItemTitle: 'Space Gray MacBook Air in custody at Security Hub',
     description: 'Space Gray with subtle scratches near the USB-C port. Fitted in dark gray felt sleeve.',
+    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&auto=format&fit=crop&q=80',
   },
   {
     id: 'REP-2026-0982',
@@ -88,6 +189,7 @@ export const INITIAL_LOST_REPORTS = [
     hasMatch: false,
     matchedItemTitle: null,
     description: 'White case with name sticker inside slide cover. Battery was low when misplaced.',
+    image: 'https://images.unsplash.com/photo-1587145820266-a5951ee6f620?w=500&auto=format&fit=crop&q=80',
   },
 ];
 
@@ -102,6 +204,7 @@ export const INITIAL_FOUND_REPORTS = [
     status: 'Verified in Custody',
     statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     description: 'Matte black 32oz bottle with minor dent on bottom rim and trail stickers.',
+    image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=500&auto=format&fit=crop&q=80',
   },
 ];
 
