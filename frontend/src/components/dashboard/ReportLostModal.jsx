@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, PlusCircle, CheckCircle2, AlertTriangle, MapPin, Calendar } from './icons';
+import ItemImageUpload from './ItemImageUpload';
 
 export default function ReportLostModal({ isOpen, onClose, onSubmitSuccess }) {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ export default function ReportLostModal({ isOpen, onClose, onSubmitSuccess }) {
     description: '',
     uniqueMarks: '',
     contactEmail: 'alex.rivera@university.edu',
+    image: null,
   });
 
   const [errors, setErrors] = useState({});
@@ -69,6 +71,7 @@ export default function ReportLostModal({ isOpen, onClose, onSubmitSuccess }) {
         dateLost: formData.dateLost,
         locationLost: formData.locationLost,
         description: formData.description,
+        image: formData.image,
         status: 'Active Searching',
         statusColor: 'amber',
         potentialMatches: 0,
@@ -94,7 +97,6 @@ export default function ReportLostModal({ isOpen, onClose, onSubmitSuccess }) {
         className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-200 bg-slate-50/70">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-sm">
@@ -115,7 +117,6 @@ export default function ReportLostModal({ isOpen, onClose, onSubmitSuccess }) {
           </button>
         </div>
 
-        {/* Content */}
         <div className="overflow-y-auto p-6 space-y-5">
           {submitted ? (
             <div className="py-10 text-center space-y-3">
@@ -227,6 +228,12 @@ export default function ReportLostModal({ isOpen, onClose, onSubmitSuccess }) {
                 />
               </div>
 
+              <ItemImageUpload
+                value={formData.image}
+                onChange={(img) => setFormData((prev) => ({ ...prev, image: img }))}
+                label="Lost Item Photo"
+              />
+
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-amber-800 leading-relaxed">
@@ -237,7 +244,6 @@ export default function ReportLostModal({ isOpen, onClose, onSubmitSuccess }) {
           )}
         </div>
 
-        {/* Footer */}
         {!submitted && (
           <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-slate-200 bg-slate-50/50">
             <button

@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import campusBg from '../assets/uc.jpg';
 import Breadcrumb from '../components/common/Breadcrumb';
 import ItemCard from '../components/common/ItemCard';
+import { getPublicFoundItems } from '../services/foundItemsService';
 
 const CATEGORIES = [
   'All',
@@ -29,6 +31,7 @@ const CUSTODY_COLORS = {
 
 const ITEMS = [
   {
+    id: 'ITM-101',
     title: 'MacBook Air 13" M2',
     category: 'Electronics',
     status: 'Verification Required',
@@ -39,6 +42,7 @@ const ITEMS = [
     buttonType: 'claim',
   },
   {
+    id: 'ITM-102',
     title: 'Sony WH-1000XM4 Headphones',
     category: 'Electronics',
     status: 'In Custody',
@@ -49,6 +53,7 @@ const ITEMS = [
     buttonType: 'claim',
   },
   {
+    id: 'ITM-103',
     title: 'Student ID & Keycard Lanyard',
     category: 'IDs & Wallets',
     status: 'Retrieval Authorized',
@@ -59,6 +64,7 @@ const ITEMS = [
     buttonType: 'claim',
   },
   {
+    id: 'ITM-104',
     title: 'North Face Recon Backpack',
     category: 'Bags & Backpacks',
     status: 'Verification Required',
@@ -69,6 +75,7 @@ const ITEMS = [
     buttonType: 'claim',
   },
   {
+    id: 'ITM-105',
     title: 'TI-84 Plus CE Calculator',
     category: 'Books & Stationery',
     status: 'In Custody',
@@ -79,6 +86,7 @@ const ITEMS = [
     buttonType: 'claim',
   },
   {
+    id: 'ITM-106',
     title: 'Car Key Fob & House Keys',
     category: 'Keys & Fobs',
     status: 'Retrieved',
@@ -89,6 +97,7 @@ const ITEMS = [
     buttonType: 'closed',
   },
   {
+    id: 'ITM-107',
     title: 'Navy Varsity Zip-Up Hoodie',
     category: 'Clothing & Apparel',
     status: 'In Custody',
@@ -99,6 +108,7 @@ const ITEMS = [
     buttonType: 'claim',
   },
   {
+    id: 'ITM-108',
     title: 'Stainless Steel Water Bottle',
     category: 'Drinkware',
     status: 'Retrieval Authorized',
@@ -109,6 +119,7 @@ const ITEMS = [
     buttonType: 'claim',
   },
   {
+    id: 'ITM-109',
     title: 'Apple iPad Pro 11" with Pencil',
     category: 'Electronics',
     status: 'In Custody',
@@ -119,6 +130,7 @@ const ITEMS = [
     buttonType: 'claim',
   },
   {
+    id: 'ITM-110',
     title: 'Leather Bi-Fold Wallet (Brown)',
     category: 'IDs & Wallets',
     status: 'Verification Required',
@@ -129,6 +141,7 @@ const ITEMS = [
     buttonType: 'claim',
   },
   {
+    id: 'ITM-111',
     title: 'Ray-Ban Aviator Sunglasses',
     category: 'Clothing & Apparel',
     status: 'In Custody',
@@ -139,6 +152,7 @@ const ITEMS = [
     buttonType: 'claim',
   },
   {
+    id: 'ITM-112',
     title: 'Logitech MX Master 3S Mouse',
     category: 'Electronics',
     status: 'Retrieval Authorized',
@@ -216,7 +230,7 @@ const STATUSES = ['All Statuses', ...Array.from(new Set(ITEMS.map((item) => item
 const SELECT_CLASSES =
   'w-full sm:w-auto pl-3 pr-8 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition appearance-none';
 
-export default function BrowseFoundItemsPage() {
+export default function BrowseFoundItemsPage({ inDashboard = false }) {
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [location, setLocation] = useState('All Locations');
@@ -227,14 +241,19 @@ export default function BrowseFoundItemsPage() {
 
   const ITEMS_PER_PAGE = 9;
 
+  const { data: rawItems = [] } = useQuery({
+    queryKey: ['publicFoundItems'],
+    queryFn: getPublicFoundItems,
+  });
+
   const items = useMemo(
     () =>
-      ITEMS.map((item) => ({
+      rawItems.map((item) => ({
         ...item,
-        statusColor: STATUS_COLORS[item.status],
+        statusColor: STATUS_COLORS[item.status] || 'bg-slate-50 text-slate-700 border-slate-200',
         custodyColor: item.status === 'Retrieved' ? CUSTODY_COLORS.Retrieved : CUSTODY_COLORS.default,
       })),
-    []
+    [rawItems]
   );
 
   const filteredItems = useMemo(() => {
@@ -248,7 +267,6 @@ export default function BrowseFoundItemsPage() {
     });
   }, [items, category, location, status, searchQuery]);
 
-  // Reset to first page whenever search filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [category, location, status, searchQuery]);
@@ -260,27 +278,41 @@ export default function BrowseFoundItemsPage() {
     [filteredItems, startIndex]
   );
 
-  return (
-    <section className="relative overflow-hidden isolate pt-8 pb-24 px-4 sm:px-6 lg:px-8">
-      <img src={campusBg} alt="University campus background texture" className="absolute inset-0 -z-30 h-full w-full object-cover object-center opacity-15 grayscale" />
-      <div aria-hidden="true" className="absolute inset-0 -z-20 bg-gradient-to-b from-white via-white/90 to-slate-50" />
-      <div aria-hidden="true" className="absolute inset-0 -z-10 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(15,23,42,0.10)_100%)]" />
+  const handlePaginationScroll = () => {
+    window.scrollTo({ top: inDashboard ? 0 : 350, behavior: 'smooth' });
+  };
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        <div className="mb-6">
-          <Breadcrumb items={[{ label: 'Home', to: '/' }, { label: 'Browse Found Items' }]} />
+  const catalogContent = (
+    <>
+      {inDashboard ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Browse Campus Items
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Explore officially cataloged lost and found belongings held in university security custody
+            </p>
+          </div>
         </div>
+      ) : (
+        <>
+          <div className="mb-6">
+            <Breadcrumb items={[{ label: 'Home', to: '/' }, { label: 'Browse Found Items' }]} />
+          </div>
 
-        <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0f172a] tracking-tight">
-            Browse Found Items
-          </h1>
-          <p className="mt-2 text-base text-slate-600 max-w-2xl">
-            Currently cataloged campus belongings in official security custody.
-          </p>
-        </div>
+          <div className="mb-8">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0f172a] tracking-tight">
+              Browse Found Items
+            </h1>
+            <p className="mt-2 text-base text-slate-600 max-w-2xl">
+              Currently cataloged campus belongings in official security custody.
+            </p>
+          </div>
+        </>
+      )}
 
-        <div className="bg-white/90 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5 mb-6">
+      <div className={`${inDashboard ? 'bg-white shadow-2xs' : 'bg-white/90 backdrop-blur-sm shadow-sm mb-6'} border border-slate-200 rounded-2xl p-4 sm:p-5`}>
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -419,7 +451,7 @@ export default function BrowseFoundItemsPage() {
                 type="button"
                 onClick={() => {
                   setCurrentPage((p) => Math.max(p - 1, 1));
-                  window.scrollTo({ top: 350, behavior: 'smooth' });
+                  handlePaginationScroll();
                 }}
                 disabled={currentPage === 1}
                 className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 shadow-2xs cursor-pointer"
@@ -438,7 +470,7 @@ export default function BrowseFoundItemsPage() {
                     type="button"
                     onClick={() => {
                       setCurrentPage(pageNumber);
-                      window.scrollTo({ top: 350, behavior: 'smooth' });
+                      handlePaginationScroll();
                     }}
                     aria-current={currentPage === pageNumber ? 'page' : undefined}
                     className={`h-9 w-9 rounded-lg text-xs font-semibold transition cursor-pointer ${
@@ -456,7 +488,7 @@ export default function BrowseFoundItemsPage() {
                 type="button"
                 onClick={() => {
                   setCurrentPage((p) => Math.min(p + 1, totalPages));
-                  window.scrollTo({ top: 350, behavior: 'smooth' });
+                  handlePaginationScroll();
                 }}
                 disabled={currentPage === totalPages}
                 className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 shadow-2xs cursor-pointer"
@@ -470,6 +502,21 @@ export default function BrowseFoundItemsPage() {
             </div>
           </nav>
         )}
+    </>
+  );
+
+  if (inDashboard) {
+    return <div className="space-y-6">{catalogContent}</div>;
+  }
+
+  return (
+    <section className="relative overflow-hidden isolate pt-8 pb-24 px-4 sm:px-6 lg:px-8">
+      <img src={campusBg} alt="University campus background texture" className="absolute inset-0 -z-30 h-full w-full object-cover object-center opacity-15 grayscale" />
+      <div aria-hidden="true" className="absolute inset-0 -z-20 bg-gradient-to-b from-white via-white/90 to-slate-50" />
+      <div aria-hidden="true" className="absolute inset-0 -z-10 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(15,23,42,0.10)_100%)]" />
+
+      <div className="relative z-10 max-w-7xl mx-auto space-y-6">
+        {catalogContent}
       </div>
     </section>
   );

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function QuickActions({ onOpenReportLost, onOpenReportFound }) {
+export default function QuickActions({ onOpenReportLost, onOpenReportFound, onBrowse }) {
   const navigate = useNavigate();
 
   const actions = [
@@ -23,7 +23,7 @@ export default function QuickActions({ onOpenReportLost, onOpenReportFound }) {
       id: 'browse',
       title: 'Browse Campus Items',
       desc: 'Explore officially cataloged lost and found belongings.',
-      onClick: () => navigate('/browse-found-items'),
+      onClick: onBrowse || (() => navigate('/browse-found-items')),
       actionText: 'Browse Catalog',
     },
   ];

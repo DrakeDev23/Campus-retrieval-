@@ -1,34 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { getClaims, hasExistingClaim } from '../../services/claimsService';
+import ClaimSubmissionModal from './ClaimSubmissionModal';
+import Toast from './Toast';
 
-/**
- * Found-item card used by the "Recently Found" preview on the home page
- * and the full Browse Found Items catalog. Visual design is unchanged
- * from the original inline implementation — only extracted for reuse.
- */
 export default function ItemCard({ item, onClaim, minimal = true }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user } = useCurrentUser();
+  const claimantId = user?.studentId || user?.id;
+  const isAdmin = user?.role === 'admin';
+
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const { data: claims = [] } = useQuery({
+    queryKey: ['claims', claimantId],
+    queryFn: () => getClaims(claimantId),
+    enabled: Boolean(isAuthenticated && claimantId),
+  });
+
+  const alreadyClaimed = Boolean(
+    isAuthenticated &&
+      claimantId &&
+      hasExistingClaim(claims, item.id, item.title, claimantId)
+  );
 
   useEffect(() => {
-    if (!detailsModalOpen && !claimModalOpen) return;
+    if (!detailsModalOpen) return;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setDetailsModalOpen(false);
-        setClaimModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [detailsModalOpen, claimModalOpen]);
+  }, [detailsModalOpen]);
 
   useEffect(() => {
-    if (detailsModalOpen || claimModalOpen) {
+    if (detailsModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -36,7 +50,7 @@ export default function ItemCard({ item, onClaim, minimal = true }) {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [detailsModalOpen, claimModalOpen]);
+  }, [detailsModalOpen]);
 
   const handleClaimClick = () => {
     if (!isAuthenticated) {
@@ -48,6 +62,8 @@ export default function ItemCard({ item, onClaim, minimal = true }) {
       });
       return;
     }
+
+    if (alreadyClaimed) return;
 
     if (onClaim) {
       onClaim(item);
@@ -144,14 +160,28 @@ export default function ItemCard({ item, onClaim, minimal = true }) {
         >
           View Details
         </button>
-        {item.buttonType === 'claim' ? (
-          <button
-            type="button"
-            onClick={handleClaimClick}
-            className="flex-1 py-2 px-3 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition text-center cursor-pointer"
-          >
-            Claim Item
-          </button>
+        {isAdmin ? (
+          <span className="flex-1 py-2 px-3 text-xs font-semibold text-slate-500 bg-slate-50 rounded-lg text-center border border-slate-200">
+            Admin View
+          </span>
+        ) : item.buttonType === 'claim' ? (
+          alreadyClaimed ? (
+            <button
+              type="button"
+              disabled
+              className="flex-1 py-2 px-3 text-xs font-semibold text-slate-500 bg-slate-100 rounded-lg cursor-not-allowed text-center border border-slate-200"
+            >
+              Already Claimed
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleClaimClick}
+              className="flex-1 py-2 px-3 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition text-center cursor-pointer"
+            >
+              Claim Item
+            </button>
+          )
         ) : (
           <button type="button" disabled className="flex-1 py-2 px-3 text-xs font-semibold text-slate-400 bg-slate-50 rounded-lg cursor-not-allowed text-center border border-slate-200">
             Case Closed
@@ -275,17 +305,31 @@ export default function ItemCard({ item, onClaim, minimal = true }) {
                 >
                   Close
                 </button>
-                {item.buttonType === 'claim' ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDetailsModalOpen(false);
-                      handleClaimClick();
-                    }}
-                    className="flex-1 py-2.5 px-4 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition text-center cursor-pointer"
-                  >
-                    Claim This Item
-                  </button>
+                {isAdmin ? (
+                  <span className="flex-1 py-2.5 px-4 text-xs font-semibold text-slate-500 bg-slate-100 rounded-xl text-center border border-slate-200">
+                    Admin View
+                  </span>
+                ) : item.buttonType === 'claim' ? (
+                  alreadyClaimed ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="flex-1 py-2.5 px-4 text-xs font-semibold text-slate-500 bg-slate-100 rounded-xl cursor-not-allowed text-center border border-slate-200"
+                    >
+                      Already Claimed
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDetailsModalOpen(false);
+                        handleClaimClick();
+                      }}
+                      className="flex-1 py-2.5 px-4 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition text-center cursor-pointer"
+                    >
+                      Claim This Item
+                    </button>
+                  )
                 ) : (
                   <button
                     type="button"
@@ -301,65 +345,20 @@ export default function ItemCard({ item, onClaim, minimal = true }) {
           document.body
         )}
 
-      {claimModalOpen &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setClaimModalOpen(false);
-            }}
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 my-auto">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 text-blue-600">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </span>
-                  <h3 className="text-lg font-bold text-slate-900">Claim Initiated</h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setClaimModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
-                  aria-label="Close"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <p className="text-sm text-slate-600 leading-relaxed mb-4">
-                Your claim request for <strong className="text-slate-900">{item.title}</strong> has been initiated under Student ID <strong className="text-slate-900">{user?.studentId || 'Authenticated User'}</strong>.
-              </p>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-5 text-xs text-slate-600 space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Custody:</span>
-                  <span className="font-semibold text-slate-800">{item.custody}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Location:</span>
-                  <span className="font-semibold text-slate-800">{item.location}</span>
-                </div>
-              </div>
-              <p className="text-xs text-slate-500 mb-5">
-                Please visit the custody station with your physical university student ID card to complete ownership verification and claim the item.
-              </p>
-              <button
-                type="button"
-                onClick={() => setClaimModalOpen(false)}
-                className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-sm cursor-pointer"
-              >
-                Understood
-              </button>
-            </div>
-          </div>,
-          document.body
-        )}
+      <ClaimSubmissionModal
+        isOpen={claimModalOpen}
+        onClose={() => setClaimModalOpen(false)}
+        item={item}
+        onSuccess={(newClaim) => {
+          setToast({
+            type: 'success',
+            title: 'Claim Submitted Successfully',
+            message: `${newClaim.referenceNo} for ${newClaim.itemName} is now at Stage 1 (Claim Submitted).`,
+          });
+        }}
+      />
+
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   );
 }

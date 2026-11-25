@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { SignIn, SignUp } from '@clerk/clerk-react';
 import BrandPanel from '../components/auth/BrandPanel';
 import LoginForm from '../components/auth/LoginForm';
 import RegisterForm from '../components/auth/RegisterForm';
 import { ArrowLeft, Lock, Search } from '../components/auth/icons';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 const MODES = [
   { id: 'login', label: 'Sign In' },
@@ -25,6 +27,16 @@ export default function AuthPage({ initialMode }) {
   const [mode, setMode] = useState(getTargetMode);
   const panelRef = useRef(null);
   const firstRender = useRef(true);
+
+  const { isClerkEnabled, isAuthenticated, role } = useCurrentUser();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const destination = location.state?.from || (role === 'admin' ? '/admin' : '/dashboard');
+      navigate(destination, { replace: true });
+    }
+  }, [isAuthenticated, role, navigate, location.state]);
 
   useEffect(() => {
     const target = getTargetMode();
@@ -84,57 +96,77 @@ export default function AuthPage({ initialMode }) {
                 </div>
               </div>
             )}
-            <div
-              role="tablist"
-              aria-label="Authentication mode"
-              className="mb-8 grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
-            >
-              {MODES.map(({ id, label }) => {
-                const active = mode === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    role="tab"
-                    id={`tab-${id}`}
-                    aria-selected={active}
-                    aria-controls="auth-panel"
-                    tabIndex={active ? 0 : -1}
-                    onClick={switchTo(id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                        e.preventDefault();
-                        setMode(id === 'login' ? 'register' : 'login');
-                        document.getElementById(`tab-${id === 'login' ? 'register' : 'login'}`)?.focus();
-                      }
-                    }}
-                    className={`relative rounded-lg px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
-                      active ? 'bg-white text-blue-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    {label}
-                    {active && (
-                      <span className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-yellow-400" aria-hidden="true" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {isClerkEnabled ? (
+              <div className="flex justify-center py-4">
+                {mode === 'login' ? (
+                  <SignIn
+                    routing="hash"
+                    signUpUrl="/register"
+                    fallbackRedirectUrl={location.state?.from || '/dashboard'}
+                  />
+                ) : (
+                  <SignUp
+                    routing="hash"
+                    signInUrl="/login"
+                    fallbackRedirectUrl={location.state?.from || '/dashboard'}
+                  />
+                )}
+              </div>
+            ) : (
+              <>
+                <div
+                  role="tablist"
+                  aria-label="Authentication mode"
+                  className="mb-8 grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1"
+                >
+                  {MODES.map(({ id, label }) => {
+                    const active = mode === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        role="tab"
+                        id={`tab-${id}`}
+                        aria-selected={active}
+                        aria-controls="auth-panel"
+                        tabIndex={active ? 0 : -1}
+                        onClick={switchTo(id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                            e.preventDefault();
+                            setMode(id === 'login' ? 'register' : 'login');
+                            document.getElementById(`tab-${id === 'login' ? 'register' : 'login'}`)?.focus();
+                          }
+                        }}
+                        className={`relative rounded-lg px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                          active ? 'bg-white text-blue-800 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        {label}
+                        {active && (
+                          <span className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-yellow-400" aria-hidden="true" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
 
-            <div
-              id="auth-panel"
-              role="tabpanel"
-              aria-labelledby={`tab-${mode}`}
-              tabIndex={-1}
-              ref={panelRef}
-              className="focus:outline-none"
-            >
-              {mode === 'login' ? (
-                <LoginForm key="login" onSwitchMode={switchTo('register')} />
-              ) : (
-                <RegisterForm key="register" onSwitchMode={switchTo('login')} />
-              )}
-            </div>
+                <div
+                  id="auth-panel"
+                  role="tabpanel"
+                  aria-labelledby={`tab-${mode}`}
+                  tabIndex={-1}
+                  ref={panelRef}
+                  className="focus:outline-none"
+                >
+                  {mode === 'login' ? (
+                    <LoginForm key="login" onSwitchMode={switchTo('register')} />
+                  ) : (
+                    <RegisterForm key="register" onSwitchMode={switchTo('login')} />
+                  )}
+                </div>
+              </>
+            )}
 
             <p className="mt-8 flex items-center justify-center gap-2 border-t border-slate-100 pt-5 text-xs text-slate-500">
               <Lock className="h-4 w-4 text-blue-700" />

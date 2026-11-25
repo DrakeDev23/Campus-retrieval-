@@ -7,6 +7,9 @@ import HowItWorksPage from './pages/HowItWorksPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AuthPage from './pages/AuthPage';
 import StudentDashboard from './pages/StudentDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminClaimReviewPage from './pages/AdminClaimReviewPage';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
@@ -16,7 +19,38 @@ export default function App() {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/login" element={<AuthPage initialMode="login" />} />
         <Route path="/register" element={<AuthPage initialMode="register" />} />
-        <Route path="/dashboard" element={<StudentDashboard />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/catalog"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard defaultTab="admin-browse" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/claims/:claimId"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminClaimReviewPage />
+            </ProtectedRoute>
+          }
+        />
         <Route element={<Layout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/browse-found-items" element={<BrowseFoundItemsPage />} />

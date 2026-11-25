@@ -16,10 +16,6 @@ function inputClasses(hasError, hasIcon, hasTrailing) {
   ].join(' ');
 }
 
-/**
- * Labelled text input with optional leading icon, hint and error message.
- * Error/hint text is linked to the input via aria-describedby.
- */
 export function FormField({
   label,
   name,
@@ -74,7 +70,6 @@ export function FormField({
   );
 }
 
-/** Show/hide toggle button used inside password fields. */
 export function PasswordToggle({ visible, onToggle, controlLabel = 'password' }) {
   return (
     <button
@@ -89,7 +84,6 @@ export function PasswordToggle({ visible, onToggle, controlLabel = 'password' })
   );
 }
 
-/** Password input with its own visibility state (or controlled via `visible`/`onToggle`). */
 export function PasswordField({ visible, onToggle, controlLabel, ...props }) {
   const [localVisible, setLocalVisible] = useState(false);
   const isControlled = typeof visible === 'boolean';
@@ -105,7 +99,6 @@ export function PasswordField({ visible, onToggle, controlLabel, ...props }) {
   );
 }
 
-/** Checkbox with label content (supports links) and optional error. */
 export function CheckboxField({ name, checked, onChange, error, children }) {
   const id = useId();
   const errorId = `${id}-error`;
@@ -138,7 +131,6 @@ export function CheckboxField({ name, checked, onChange, error, children }) {
   );
 }
 
-/** Primary blue button with a yellow accent bar along the bottom edge. */
 export function PrimaryButton({ children, loading = false, ...props }) {
   return (
     <button

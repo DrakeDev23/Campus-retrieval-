@@ -10,7 +10,7 @@ const INITIAL = { studentId: '', password: '', remember: false };
 export default function LoginForm({ onSwitchMode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, isClerkEnabled } = useAuth();
   const [values, setValues] = useState(INITIAL);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,6 @@ export default function LoginForm({ onSwitchMode }) {
     const next = { ...values, [name]: type === 'checkbox' ? checked : value };
     setValues(next);
     setSuccess(false);
-    // Clear a field's error as soon as the user fixes it.
     if (errors[name] && validators[name] && !validators[name](next)) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -45,7 +44,6 @@ export default function LoginForm({ onSwitchMode }) {
       e.currentTarget.querySelector('[aria-invalid="true"]')?.focus();
       return;
     }
-    // Simulate authentication and set session state
     setLoading(true);
     setTimeout(() => {
       login({ studentId: values.studentId });
@@ -119,6 +117,39 @@ export default function LoginForm({ onSwitchMode }) {
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
         </PrimaryButton>
       </form>
+
+      {!isClerkEnabled && (
+        <div className="mt-6 p-3.5 rounded-xl bg-slate-50 border border-slate-200/90 text-xs text-slate-600">
+          <p className="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+            Demo Accounts (Any Password):
+          </p>
+          <div className="space-y-1 text-[11px]">
+            <p>
+              &bull; <strong className="text-slate-900">Student:</strong> ID{' '}
+              <button
+                type="button"
+                onClick={() => setValues((v) => ({ ...v, studentId: '2024-08912' }))}
+                className="font-mono text-blue-700 underline hover:text-blue-900 cursor-pointer"
+              >
+                2024-08912
+              </button>{' '}
+              (Jane G. Doe)
+            </p>
+            <p>
+              &bull; <strong className="text-slate-900">Administrator:</strong> ID{' '}
+              <button
+                type="button"
+                onClick={() => setValues((v) => ({ ...v, studentId: 'admin' }))}
+                className="font-mono text-amber-700 underline hover:text-amber-900 cursor-pointer"
+              >
+                admin
+              </button>{' '}
+              (Officer R. Santos)
+            </p>
+          </div>
+        </div>
+      )}
 
       <p className="mt-8 text-center text-sm text-slate-600">
         New to Campus Retrieval?{' '}
