@@ -52,7 +52,7 @@ export default function AdminActionModal({
     advance: 'bg-blue-600 hover:bg-blue-700 text-white',
     approve: 'bg-emerald-600 hover:bg-emerald-700 text-white',
     reject: 'bg-rose-600 hover:bg-rose-700 text-white',
-    'request-info': 'bg-amber-600 hover:bg-amber-700 text-white',
+    'request-info': 'bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold',
   };
 
   return createPortal(
@@ -77,7 +77,7 @@ export default function AdminActionModal({
                   : actionType === 'reject'
                   ? 'bg-rose-100 text-rose-700'
                   : actionType === 'request-info'
-                  ? 'bg-amber-100 text-amber-700'
+                  ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
                   : 'bg-blue-100 text-blue-700'
               }`}
             >

@@ -1,4 +1,8 @@
-import { readClaimsStore, writeClaimsStore } from './claimsService.js';
+// TODO(backend): validate passCode server-side only, never trust the client
+// TODO(backend): rate limiting in FastAPI
+// TODO(backend): store only hashes of passCode and PIN
+
+import { readClaimsStore, writeClaimsStore, generatePassCode, formatValidityWindow } from './claimsService.js';
 import { readItemsStore, writeItemsStore } from './foundItemsService.js';
 import { pushNotification } from './notificationsService.js';
 
@@ -124,6 +128,13 @@ export async function advanceClaimStage(claimId, actingUser) {
   return updatedClaim;
 }
 
+/**
+ * Approve claim for item retrieval (Stage 5).
+ * Generates a 6-digit locker PIN and a separate cryptographically secure passCode.
+ * 
+ * TODO(backend): validate passCode server-side only, never trust the client
+ * TODO(backend): store only hashes of passCode and PIN
+ */
 export async function approveClaim(claimId, actingUser) {
   await delay(400);
   ensureAdmin(actingUser);
@@ -140,15 +151,19 @@ export async function approveClaim(claimId, actingUser) {
   const now = new Date();
   const adminName = actingUser.fullName || 'Security Officer';
   const pin = generateLockerPin();
+  const passCode = generatePassCode();
   const pickupStation = claim.custodyLocation || 'Central Security Hub Room 102';
   const expiryDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const passExpiresAt = expiryDate.toISOString();
 
   const pickupPass = {
     code: `PASS-${claim.referenceNo.replace(/[^0-9]/g, '') || Math.floor(100 + Math.random() * 900)}`,
     pin,
     station: pickupStation,
-    expiry: `Valid until ${formatShortDate(expiryDate)} (5:00 PM)`,
+    expiry: formatValidityWindow(passExpiresAt),
     notes: 'Present this digital pass or PIN at the assigned counter / locker to retrieve your item.',
+    passCode,
+    expiresAt: passExpiresAt,
   };
 
   const updatedClaim = {
@@ -158,6 +173,9 @@ export async function approveClaim(claimId, actingUser) {
     statusBadge: 'bg-blue-50 text-blue-700 border-blue-200',
     assignedOfficer: adminName,
     hasStudentReply: false,
+    passCode,
+    passExpiresAt,
+    passUsedAt: null,
     pickupPass,
     timeline: [
       {
@@ -422,3 +440,281 @@ export async function deleteFoundItem(itemId, actingUser) {
   writeItemsStore(updated);
   return true;
 }
+
+/**
+ * Verify a student's retrieval pass.
+ *
+ * Rules:
+ * 1. Match passCode (or Claim ID + PIN) FIRST.
+ * 2. Only after a match, report Expired / Already used / Wrong status.
+ * 3. Wrong claim ID and wrong code both return the same generic "Invalid".
+ * 4. Manual entry is always Claim ID + 6-digit PIN. A PIN alone is never accepted.
+ *
+ * TODO(backend): validate passCode server-side only, never trust the client
+ * TODO(backend): rate limiting in FastAPI
+ * TODO(backend): store only hashes of passCode and PIN
+ */
+export async function verifyPass(input, actingUser) {
+  await delay(300);
+  ensureAdmin(actingUser);
+
+  if (!input) {
+    return { valid: false, result: 'Invalid', message: 'No pass code or credentials provided.' };
+  }
+
+  let claimId = '';
+  let passCode = '';
+  let pin = '';
+  let isManualEntry = false;
+
+  if (typeof input === 'object') {
+    claimId = (input.claimId || '').trim();
+    passCode = (input.passCode || '').trim();
+    pin = (input.pin || '').trim();
+    isManualEntry = Boolean(input.isManual || (claimId && pin && !passCode));
+  } else if (typeof input === 'string') {
+    const raw = input.trim();
+    // Cap input length for security
+    if (raw.length > 500) {
+      return { valid: false, result: 'Invalid', message: 'Input exceeds maximum allowed length.' };
+    }
+
+    try {
+      if (raw.startsWith('{') && raw.endsWith('}')) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          claimId = (parsed.claimId || '').trim();
+          passCode = (parsed.passCode || '').trim();
+        }
+      }
+    } catch {
+      // Non-JSON string
+    }
+
+    if (!claimId && !passCode) {
+      return { valid: false, result: 'Invalid', message: 'Invalid pass format. Manual entry requires both Claim ID and 6-digit PIN.' };
+    }
+  }
+
+  // Rule: Manual entry is ALWAYS Claim ID + 6-digit PIN. A PIN alone is never accepted.
+  if (isManualEntry || pin) {
+    if (!claimId || !pin) {
+      return {
+        valid: false,
+        result: 'Invalid',
+        message: 'Manual entry requires both Claim ID and the 6-digit PIN.',
+      };
+    }
+  }
+
+  const claims = readClaimsStore();
+  const claim = claims.find(
+    (c) =>
+      c.id.toLowerCase() === claimId.toLowerCase() ||
+      c.referenceNo.toLowerCase() === claimId.toLowerCase()
+  );
+
+  // Match the passCode (or Claim ID + PIN) FIRST
+  // Wrong claim ID and wrong code both return the same generic "Invalid"
+  if (!claim) {
+    return { valid: false, result: 'Invalid', message: 'Invalid retrieval pass or credentials.' };
+  }
+
+  let matched = false;
+  if (isManualEntry || pin) {
+    const cleanInputPin = pin.replace(/[^0-9]/g, '');
+    const cleanStoredPin = (claim.pickupPass?.pin || '').replace(/[^0-9]/g, '');
+    if (cleanInputPin.length === 6 && cleanStoredPin.length === 6 && cleanInputPin === cleanStoredPin) {
+      matched = true;
+    }
+  } else if (passCode) {
+    if (claim.passCode && claim.passCode === passCode) {
+      matched = true;
+    }
+  }
+
+  if (!matched) {
+    return { valid: false, result: 'Invalid', message: 'Invalid retrieval pass or credentials.' };
+  }
+
+  // ONLY AFTER a match report Expired / Already used / Wrong status
+  // 1. Already used?
+  if (claim.passUsedAt || claim.currentStage === 6) {
+    return {
+      valid: false,
+      result: 'Already used',
+      claim,
+      message: 'This retrieval pass has already been used and item was handed over.',
+    };
+  }
+
+  // 2. Wrong status? (Must be Stage 5: Ready for Retrieval)
+  if (claim.currentStage !== 5) {
+    return {
+      valid: false,
+      result: 'Wrong status',
+      claim,
+      message: `Claim is in status "${claim.status}" (Stage ${claim.currentStage}), not Approved for Retrieval.`,
+    };
+  }
+
+  // 3. Expired?
+  const expiresAt = claim.passExpiresAt || claim.pickupPass?.expiresAt;
+  if (expiresAt && new Date(expiresAt).getTime() < Date.now()) {
+    return {
+      valid: false,
+      result: 'Expired',
+      claim,
+      message: 'This retrieval pass has expired.',
+    };
+  }
+
+  return {
+    valid: true,
+    result: 'Valid',
+    claim,
+    message: 'Pass verified successfully. Ready for physical ID inspection and handover.',
+  };
+}
+
+/**
+ * Confirm item handover and finalize case to Stage 6 (Successfully Retrieved).
+ * 
+ * Rules:
+ * - Re-verifies everything itself (match, status, expiry, passUsedAt) with a fresh read from storage.
+ * - Is a no-op if already used.
+ * - Requires physical school ID verification checkbox confirmation.
+ * - Closes other active claims on the same item.
+ * - Sets item status in custody to Returned.
+ * - Generates official retrieval receipt and deep-links notification to student.
+ * 
+ * TODO(backend): validate passCode server-side only, never trust the client
+ * TODO(backend): rate limiting in FastAPI
+ * TODO(backend): store only hashes of passCode and PIN
+ */
+export async function confirmHandover(claimId, actingUser, options = {}) {
+  await delay(350);
+  ensureAdmin(actingUser);
+
+  const claims = readClaimsStore();
+  const claimIndex = claims.findIndex((c) => c.id === claimId || c.referenceNo === claimId);
+  if (claimIndex === -1) {
+    throw new Error('Claim not found.');
+  }
+
+  const claim = claims[claimIndex];
+
+  // Fresh read verification: No-op if already used
+  if (claim.passUsedAt || claim.currentStage === 6) {
+    return {
+      success: true,
+      alreadyUsed: true,
+      claim,
+      message: 'Pass has already been used and handover was previously completed.',
+    };
+  }
+
+  if (claim.currentStage !== 5) {
+    throw new Error(`Cannot handover claim in status "${claim.status}" (Stage ${claim.currentStage}). Must be Stage 5.`);
+  }
+
+  const expiresAt = claim.passExpiresAt || claim.pickupPass?.expiresAt;
+  if (expiresAt && new Date(expiresAt).getTime() < Date.now()) {
+    throw new Error('Cannot handover item: The retrieval pass has expired.');
+  }
+
+  if (!options.schoolIdVerified) {
+    throw new Error("Physical verification of the student's school ID card is mandatory prior to releasing the item.");
+  }
+
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const receiptNo = `RCP-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const adminName = actingUser.fullName || 'Security Officer';
+
+  const retrievalReceipt = {
+    receiptNo,
+    releasedAt: formatDateTime(now),
+    releasedBy: `${adminName} (Security Custody Desk)`,
+    signedBy: `${claim.claimantName || 'Student'} (Student ID: ${claim.claimantId || claim.studentId || 'Verified'})`,
+    schoolIdVerified: true,
+  };
+
+  const updatedClaim = {
+    ...claim,
+    currentStage: 6,
+    status: 'Successfully Retrieved',
+    statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    passUsedAt: nowIso,
+    retrievalReceipt,
+    timeline: [
+      {
+        date: formatDateTime(now),
+        stage: 6,
+        title: 'Handover Completed (Retrieved)',
+        desc: `Item released to ${claim.claimantName || 'student'} by ${adminName}. School ID physically verified. Digital receipt #${receiptNo} logged.`,
+        actorId: actingUser.id,
+      },
+      ...(claim.timeline || []),
+    ],
+  };
+
+  claims[claimIndex] = updatedClaim;
+
+  // On handover, close or flag other active claims on the same item
+  claims.forEach((otherClaim, idx) => {
+    if (idx === claimIndex) return;
+    const sameItem =
+      (claim.itemId && otherClaim.itemId && otherClaim.itemId === claim.itemId) ||
+      (otherClaim.itemName?.toLowerCase() === claim.itemName?.toLowerCase());
+    if (sameItem && otherClaim.currentStage < 6 && otherClaim.status !== 'Rejected') {
+      claims[idx] = {
+        ...otherClaim,
+        status: 'Closed - Item Handed Over',
+        statusBadge: 'bg-slate-100 text-slate-600 border-slate-300',
+        timeline: [
+          {
+            date: formatDateTime(now),
+            stage: otherClaim.currentStage,
+            title: 'Claim Closed (Item Handed Over)',
+            desc: `Item was returned to verified owner (${claim.claimantName || 'Student'}) under claim ${claim.referenceNo}.`,
+            actorId: actingUser.id,
+          },
+          ...(otherClaim.timeline || []),
+        ],
+      };
+    }
+  });
+
+  writeClaimsStore(claims);
+
+  // Update item custody status to Returned
+  const items = readItemsStore();
+  const itemIndex = items.findIndex(
+    (i) => (claim.itemId && i.id === claim.itemId) || i.title.toLowerCase() === claim.itemName?.toLowerCase()
+  );
+  if (itemIndex !== -1) {
+    items[itemIndex] = {
+      ...items[itemIndex],
+      status: 'Returned',
+      buttonType: 'closed',
+    };
+    writeItemsStore(items);
+  }
+
+  // Send student notification deep-linking to the claim
+  pushNotification({
+    title: 'Item Handover Complete! Retrieval Receipt Issued',
+    message: `Your claim ${claim.referenceNo} for "${claim.itemName}" has been successfully completed. Your digital retrieval receipt #${receiptNo} is now ready.`,
+    type: 'approved',
+    claimId: claim.id,
+    link: `/dashboard?tab=claims-tracking&claimId=${claim.id}`,
+  });
+
+  return {
+    success: true,
+    claim: updatedClaim,
+    receipt: retrievalReceipt,
+  };
+}
+

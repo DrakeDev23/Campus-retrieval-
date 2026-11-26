@@ -14,6 +14,7 @@ export default function Header({
   onOpenNotifications,
   onBrowse,
   semester = 'AY 2026–2027 • 1st Semester',
+  mode = 'student',
 }) {
   const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
@@ -21,14 +22,14 @@ export default function Header({
   const handleToggle = onToggleSidebar || onOpenMobile;
 
   return (
-    <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200">
-      <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200">
+      <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 min-w-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           {!sidebarOpen && (
             <button
               type="button"
               onClick={handleToggle}
-              className="p-2 -ml-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer lg:hidden flex items-center justify-center animate-in fade-in duration-150"
+              className="p-2 -ml-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer lg:hidden flex items-center justify-center shrink-0"
               aria-label="Open sidebar menu"
               title="Open sidebar menu"
             >
@@ -36,10 +37,20 @@ export default function Header({
             </button>
           )}
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-800 text-xs font-semibold shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-            <span className="hidden sm:inline">Active Term:</span>
-            <span>{semester}</span>
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold shadow-2xs whitespace-nowrap shrink-0 ${
+              mode === 'admin'
+                ? 'bg-yellow-100/90 border-yellow-300 text-yellow-950 font-bold'
+                : 'bg-blue-50/90 border-blue-200/90 text-blue-800'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 animate-pulse ${
+                mode === 'admin' ? 'bg-yellow-500' : 'bg-blue-600'
+              }`}
+            />
+            <span className="hidden sm:inline font-bold">Active Term:</span>
+            <span className="truncate">{semester}</span>
           </div>
         </div>
 

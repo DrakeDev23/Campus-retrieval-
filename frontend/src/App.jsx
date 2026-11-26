@@ -9,6 +9,8 @@ import AuthPage from './pages/AuthPage';
 import StudentDashboard from './pages/StudentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminClaimReviewPage from './pages/AdminClaimReviewPage';
+import RetrievalPassPage from './pages/RetrievalPassPage';
+import AdminVerifyPassPage from './pages/AdminVerifyPassPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
@@ -19,6 +21,14 @@ export default function App() {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/login" element={<AuthPage initialMode="login" />} />
         <Route path="/register" element={<AuthPage initialMode="register" />} />
+        <Route
+          path="/dashboard/claims/:claimId/pass"
+          element={
+            <ProtectedRoute allowedRoles={['student', 'admin']}>
+              <RetrievalPassPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={
@@ -32,6 +42,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/verify-pass"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminVerifyPassPage />
             </ProtectedRoute>
           }
         />

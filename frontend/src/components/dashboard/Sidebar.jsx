@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   LogOut,
   Menu,
-  ArrowRight,
+  QrCode,
 } from './icons';
 
 export const STUDENT_NAV_ITEMS = [
@@ -28,9 +28,10 @@ export const STUDENT_NAV_ITEMS = [
 ];
 
 export const ADMIN_NAV_ITEMS = [
-  { id: 'admin-claims', label: 'Claims Verification', icon: ShieldCheck },
-  { id: 'admin-items', label: 'Found Items Custody', icon: PackageCheck },
-  { id: 'admin-browse', label: 'Browse Public Catalog', icon: Search },
+  { id: 'admin-claims', label: 'Claims Verification', icon: ShieldCheck, isLink: '/admin' },
+  { id: 'admin-verify-pass', label: 'Scan & Verify Pass', icon: QrCode, isLink: '/admin/verify-pass' },
+  { id: 'admin-items', label: 'Found Items Custody', icon: PackageCheck, isLink: '/admin?tab=items' },
+  { id: 'admin-browse', label: 'Browse Public Catalog', icon: Search, isLink: '/admin/catalog' },
 ];
 
 export const NAV_ITEMS = STUDENT_NAV_ITEMS;
@@ -117,8 +118,8 @@ export default function Sidebar({
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="relative shrink-0">
               <div
-                className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center text-xs shadow-xs text-white ${
-                  mode === 'admin' ? 'bg-amber-600' : 'bg-blue-600'
+                className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center text-xs shadow-xs ${
+                  mode === 'admin' ? 'bg-yellow-400 text-slate-950 font-extrabold' : 'bg-blue-600 text-white'
                 }`}
               >
                 {initials}
@@ -144,26 +145,17 @@ export default function Sidebar({
           </button>
         </div>
 
-        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
           <span
             className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
               mode === 'admin'
-                ? 'text-amber-800 bg-amber-50/90 border-amber-200'
+                ? 'text-yellow-900 bg-yellow-100/80 border-yellow-300'
                 : 'text-emerald-800 bg-emerald-50/90 border-emerald-200'
             }`}
           >
-            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+            <ShieldCheck className={`w-3 h-3 ${mode === 'admin' ? 'text-yellow-700' : 'text-emerald-600'}`} />
             <span>{roleBadge}</span>
           </span>
-
-          <Link
-            to="/"
-            className="text-[10px] font-semibold text-slate-500 hover:text-blue-700 flex items-center gap-0.5 transition"
-            title="Go to Landing Page"
-          >
-            <span>Landing Page</span>
-            <ArrowRight className="w-3 h-3" />
-          </Link>
         </div>
       </div>
     </div>
@@ -175,15 +167,15 @@ export default function Sidebar({
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
             <span
-              className={`flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-xs font-bold text-base transition ${
-                mode === 'admin' ? 'bg-amber-600 group-hover:bg-amber-700' : 'bg-blue-600 group-hover:bg-blue-700'
+              className={`flex h-9 w-9 items-center justify-center rounded-xl shadow-xs font-bold text-base transition ${
+                mode === 'admin' ? 'bg-yellow-400 text-slate-950 group-hover:bg-yellow-300' : 'bg-blue-600 text-white group-hover:bg-blue-700'
               }`}
             >
               {mode === 'admin' ? 'AD' : 'CR'}
             </span>
             <div className="flex flex-col leading-tight">
               <span className="text-base font-bold text-slate-900 tracking-tight">
-                Campus<span className={mode === 'admin' ? 'text-amber-600' : 'text-blue-600'}>Retrieval</span>
+                Campus<span className={mode === 'admin' ? 'text-yellow-600' : 'text-blue-600'}>Retrieval</span>
               </span>
               <span className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase">
                 {mode === 'admin' ? 'Admin Verification' : 'Student Portal'}
@@ -220,15 +212,17 @@ export default function Sidebar({
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left ${
                 isActive
                   ? mode === 'admin'
-                    ? 'bg-amber-600 text-white shadow-xs'
+                    ? 'bg-yellow-400 text-slate-950 font-bold shadow-xs'
                     : 'bg-blue-600 text-white shadow-xs'
                   : item.isAction
                   ? 'text-blue-700 bg-blue-50/60 hover:bg-blue-100/70'
+                  : mode === 'admin'
+                  ? 'text-slate-600 hover:text-yellow-950 hover:bg-yellow-50'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? (mode === 'admin' ? 'text-slate-950' : 'text-white') : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </div>
               {messageUnreadCount > 0 && (item.id === 'claims-tracking' || item.id === 'admin-claims') ? (
@@ -236,10 +230,10 @@ export default function Sidebar({
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     isActive
                       ? mode === 'admin'
-                        ? 'bg-white text-amber-800'
+                        ? 'bg-slate-950 text-yellow-300'
                         : 'bg-white text-blue-700'
                       : mode === 'admin'
-                      ? 'bg-amber-600 text-white'
+                      ? 'bg-yellow-400 text-slate-950'
                       : 'bg-blue-600 text-white'
                   }`}
                   title={`${messageUnreadCount} unread message(s)`}
@@ -269,8 +263,8 @@ export default function Sidebar({
       <div className="flex flex-col items-center gap-3 w-full px-2 pb-4 border-b border-slate-200/80">
         <Link
           to="/"
-          className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-xs font-bold text-base transition ${
-            mode === 'admin' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'
+          className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-xs font-bold text-base transition ${
+            mode === 'admin' ? 'bg-yellow-400 text-slate-950 hover:bg-yellow-300 font-extrabold' : 'bg-blue-600 hover:bg-blue-700 text-white'
           }`}
           title={mode === 'admin' ? 'CampusRetrieval Admin Portal' : 'CampusRetrieval Student Portal'}
         >
@@ -303,15 +297,15 @@ export default function Sidebar({
               className={`w-11 h-11 flex items-center justify-center rounded-xl text-xs font-semibold transition cursor-pointer relative ${
                 isActive
                   ? mode === 'admin'
-                    ? 'bg-amber-600 text-white shadow-xs'
+                    ? 'bg-yellow-400 text-slate-950 font-bold shadow-xs'
                     : 'bg-blue-600 text-white shadow-xs'
                   : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <Icon className="w-5 h-5 shrink-0" />
               {messageUnreadCount > 0 && (item.id === 'claims-tracking' || item.id === 'admin-claims') && (
-                <span className={`absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full text-white text-[9px] font-bold flex items-center justify-center border-2 border-white ${
-                  mode === 'admin' ? 'bg-amber-600' : 'bg-blue-600'
+                <span className={`absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full text-xs font-bold flex items-center justify-center border-2 border-white ${
+                  mode === 'admin' ? 'bg-slate-950 text-yellow-300' : 'bg-blue-600 text-white'
                 }`}>
                   {messageUnreadCount > 9 ? '9+' : messageUnreadCount}
                 </span>
@@ -328,8 +322,8 @@ export default function Sidebar({
           title={`Click to open sidebar • ${displayName} (${displayId})`}
         >
           <div
-            className={`w-10 h-10 rounded-xl text-white font-bold flex items-center justify-center text-xs shadow-xs ${
-              mode === 'admin' ? 'bg-amber-600' : 'bg-blue-600'
+            className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center text-xs shadow-xs ${
+              mode === 'admin' ? 'bg-yellow-400 text-slate-950 font-extrabold' : 'bg-blue-600 text-white'
             }`}
           >
             {initials}

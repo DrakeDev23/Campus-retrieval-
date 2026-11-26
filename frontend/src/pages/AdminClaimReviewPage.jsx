@@ -156,6 +156,7 @@ export default function AdminClaimReviewPage() {
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           semester="Admin Security Hub • Terminal #01"
+          mode="admin"
         />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
@@ -172,7 +173,7 @@ export default function AdminClaimReviewPage() {
 
           {claimLoading && (
             <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
-              <div className="w-8 h-8 border-3 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-8 h-8 border-3 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="text-xs text-slate-500 font-semibold">Retrieving claim dossier and vault records...</p>
             </div>
           )}
@@ -202,7 +203,7 @@ export default function AdminClaimReviewPage() {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
                   <div>
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="font-mono text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200">
+                      <span className="font-mono text-xs font-bold text-yellow-950 bg-yellow-100 px-2.5 py-0.5 rounded-md border border-yellow-300">
                         {claim.referenceNo}
                       </span>
                       <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${claim.statusBadge}`}>
@@ -247,7 +248,7 @@ export default function AdminClaimReviewPage() {
                         type="button"
                         onClick={() => setModalAction('request-info')}
                         disabled={isActionPending}
-                        className="px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                        className="px-3.5 py-2 rounded-xl border border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-950 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
                       >
                         Request More Info
                       </button>
@@ -284,12 +285,12 @@ export default function AdminClaimReviewPage() {
                 <div className="pt-6">
                   <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-2">
                     <span>Lifecycle: Stage {currentStageIndex} of {CLAIM_STAGES.length}</span>
-                    <span className="text-amber-700 font-bold">{progressPercent}%</span>
+                    <span className="text-yellow-700 font-bold">{progressPercent}%</span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden mb-4">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        isRejected ? 'bg-rose-600' : isNeedsInfo ? 'bg-amber-500' : 'bg-gradient-to-r from-amber-500 to-emerald-600'
+                        isRejected ? 'bg-rose-600' : isNeedsInfo ? 'bg-yellow-400' : 'bg-gradient-to-r from-yellow-400 to-emerald-600'
                       }`}
                       style={{ width: `${progressPercent}%` }}
                     />
@@ -367,15 +368,15 @@ export default function AdminClaimReviewPage() {
                   )}
                 </div>
 
-                <div className="bg-white rounded-2xl border border-amber-300 p-5 sm:p-6 shadow-2xs space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-amber-100">
+                <div className="bg-white rounded-2xl border border-yellow-400 p-5 sm:p-6 shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-yellow-100">
                     <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-amber-500" />
+                      <span className="w-3 h-3 rounded-full bg-yellow-400" />
                       <h3 className="text-sm font-bold text-slate-900">
                         2. Item Vault Record (Hidden Identifiers)
                       </h3>
                     </div>
-                    <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300">
+                    <span className="text-[10px] font-bold text-yellow-950 bg-yellow-100 px-2 py-0.5 rounded-full border border-yellow-300">
                       Admin Vault Only
                     </span>
                   </div>
@@ -384,7 +385,7 @@ export default function AdminClaimReviewPage() {
                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
                       Intake Vault Identifying Marks (Withheld from Public)
                     </span>
-                    <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-950 font-mono font-semibold leading-relaxed">
+                    <div className="p-3.5 rounded-xl bg-yellow-50/80 border border-yellow-200 text-xs text-yellow-950 font-mono font-semibold leading-relaxed">
                       {itemDetails?.hiddenIdentifiers || 'No hidden identifiers logged in vault record.'}
                     </div>
                   </div>
@@ -412,7 +413,13 @@ export default function AdminClaimReviewPage() {
                   <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
                     <p className="font-bold text-slate-800 text-[11px] mb-1">Verification Standard:</p>
                     <p className="text-[11px] leading-relaxed text-slate-500">
-                      Compare the serial numbers, hardware MAC addresses, engravings, and custom hallmarks on both sides. Once verified, click <strong>"Approve for Retrieval"</strong> to issue the pickup pass and 6-digit locker PIN.
+                      {claim.currentStage === 6 ? (
+                        <span>Case Closed: Item was successfully returned and released to the verified student owner with an official digital receipt.</span>
+                      ) : claim.currentStage === 5 ? (
+                        <span>Pass Issued: Claim is approved for retrieval. The digital pass, QR code, and PIN have been issued to the student for counter pickup.</span>
+                      ) : (
+                        <span>Compare the serial numbers, hardware MAC addresses, engravings, and custom hallmarks on both sides. Once verified, click <strong>"Approve for Retrieval"</strong> to issue the pickup pass and 6-digit locker PIN.</span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -421,7 +428,7 @@ export default function AdminClaimReviewPage() {
               {claim.currentStage === 5 && claim.pickupPass && (
                 <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-950 to-slate-900 text-white border border-indigo-800 shadow-md">
                   <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                    <span className="text-xs font-bold uppercase tracking-wider text-yellow-300">
                       Active Retrieval Pass &amp; Locker PIN
                     </span>
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
@@ -435,7 +442,7 @@ export default function AdminClaimReviewPage() {
                     </div>
                     <div className="text-right">
                       <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">6-Digit PIN</span>
-                      <span className="text-2xl font-mono font-extrabold text-amber-300">{claim.pickupPass.pin}</span>
+                      <span className="text-2xl font-mono font-extrabold text-yellow-300">{claim.pickupPass.pin}</span>
                     </div>
                   </div>
                 </div>

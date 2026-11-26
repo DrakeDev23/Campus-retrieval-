@@ -27,6 +27,7 @@ export default function AdminFoundItemsView({ items = [], claims = [] }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [modalMode, setModalMode] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [toast, setToast] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -148,6 +149,7 @@ export default function AdminFoundItemsView({ items = [], claims = [] }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminFoundItems'] });
       queryClient.invalidateQueries({ queryKey: ['publicFoundItems'] });
+      setItemToDelete(null);
       setToast({
         type: 'success',
         title: 'Item Removed',
@@ -155,6 +157,7 @@ export default function AdminFoundItemsView({ items = [], claims = [] }) {
       });
     },
     onError: (err) => {
+      setItemToDelete(null);
       setToast({
         type: 'error',
         title: 'Deletion Blocked',
@@ -192,8 +195,8 @@ export default function AdminFoundItemsView({ items = [], claims = [] }) {
     <div className="space-y-6">
       <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 mb-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-yellow-100 text-yellow-950 border border-yellow-300 mb-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-yellow-700" />
             <span>Authorized Intake &amp; Vault Custody</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
@@ -207,59 +210,37 @@ export default function AdminFoundItemsView({ items = [], claims = [] }) {
         <button
           type="button"
           onClick={openAddModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer shrink-0 self-start sm:self-center"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-slate-950 text-xs font-bold shadow-xs transition cursor-pointer shrink-0 self-start sm:self-center"
         >
-          <PlusCircle className="w-4 h-4" />
+          <PlusCircle className="w-4 h-4 text-slate-950" />
           <span>+ Log Found Item</span>
         </button>
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-              statusFilter === 'all'
-                ? 'bg-amber-600 text-white shadow-2xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            All Items ({items.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('In Custody')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-              statusFilter === 'In Custody'
-                ? 'bg-blue-600 text-white shadow-2xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            In Custody
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('Claimed')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-              statusFilter === 'Claimed'
-                ? 'bg-indigo-600 text-white shadow-2xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            Claimed / Authorized
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('Returned')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-              statusFilter === 'Returned'
-                ? 'bg-emerald-600 text-white shadow-2xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            Returned
-          </button>
+          {[
+            { id: 'all', label: `All Items (${items.length})` },
+            { id: 'In Custody', label: 'In Custody' },
+            { id: 'Claimed', label: 'Claimed / Authorized' },
+            { id: 'Returned', label: 'Returned' },
+          ].map((tab) => {
+            const isActive = statusFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setStatusFilter(tab.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  isActive
+                    ? 'bg-yellow-400 text-slate-950 font-bold shadow-2xs'
+                    : 'bg-slate-100 hover:bg-yellow-50 hover:text-yellow-950 text-slate-600'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         <div className="relative w-full sm:w-64">
@@ -269,7 +250,7 @@ export default function AdminFoundItemsView({ items = [], claims = [] }) {
             placeholder="Search items, custody, location..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400/30 focus:border-yellow-500"
           />
         </div>
       </div>
@@ -368,14 +349,11 @@ export default function AdminFoundItemsView({ items = [], claims = [] }) {
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              if (window.confirm(`Delete item ${item.title} (${item.id})?`)) {
-                                deleteMutation.mutate(item.id);
-                              }
-                            }}
+                            onClick={() => setItemToDelete(item)}
                             disabled={hasActiveClaims || deleteMutation.isPending}
                             className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                            title={hasActiveClaims ? 'Cannot delete while active claims exist' : 'Delete item'}
+                            title={hasActiveClaims ? 'Cannot delete while active claims exist' : 'Delete item record'}
+                            aria-label={`Delete ${item.title}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -547,12 +525,103 @@ export default function AdminFoundItemsView({ items = [], claims = [] }) {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold transition cursor-pointer disabled:opacity-50"
+                    className="px-5 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold transition cursor-pointer disabled:opacity-50"
                   >
                     {isSaving ? 'Saving...' : modalMode === 'add' ? 'Log Found Item' : 'Save Changes'}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {itemToDelete &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
+            onClick={() => {
+              if (!deleteMutation.isPending) setItemToDelete(null);
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-dialog-title"
+          >
+            <div
+              className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-rose-50/70">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                    <Trash2 className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h3 id="delete-dialog-title" className="text-sm font-bold text-slate-900">
+                      Delete Custody Item
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Ref ID: {itemToDelete.id}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setItemToDelete(null)}
+                  disabled={deleteMutation.isPending}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition cursor-pointer disabled:opacity-50"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4 text-xs">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                  <p className="font-bold text-sm text-slate-900">{itemToDelete.title}</p>
+                  <p className="text-slate-500 text-[11px]">
+                    Category: <strong className="text-slate-700">{itemToDelete.category}</strong> &bull; Custody Facility:{' '}
+                    <strong className="text-slate-700">{itemToDelete.custody}</strong>
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-950 flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-rose-900 leading-relaxed">
+                    Are you sure you want to permanently delete this found item record? This item will be removed from catalog custody and this action cannot be undone.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setItemToDelete(null)}
+                    disabled={deleteMutation.isPending}
+                    className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition cursor-pointer disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteMutation.mutate(itemToDelete.id)}
+                    disabled={deleteMutation.isPending}
+                    className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold transition cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {deleteMutation.isPending ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Deleting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Confirm Delete</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>,
           document.body
