@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { QRCodeCanvas } from 'qrcode.react';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { formatValidityWindow } from '../../services/claimsService';
 import {
   Clock,
   CheckCircle2,
@@ -11,17 +14,34 @@ import {
   PackageCheck,
   Search,
   ExternalLink,
+  QrCode,
+  Printer,
+  Download,
 } from './icons';
 import { CLAIM_STAGES } from './mockData';
 import ClaimMessagesThread from './ClaimMessagesThread';
 
 export default function ClaimsTrackingView({ claims = [], unreadCounts }) {
+  const navigate = useNavigate();
+  const { user } = useCurrentUser();
   const [searchParams] = useSearchParams();
   const claimIdFromUrl = searchParams.get('claimId');
   const [selectedClaimId, setSelectedClaimId] = useState(() => claimIdFromUrl || claims[0]?.id || '');
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedPin, setCopiedPin] = useState(false);
+
+  const handleDownloadQr = (claim) => {
+    const canvas = document.getElementById(`qr-canvas-${claim.id}`);
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${claim.referenceNo || claim.id}-retrieval-qr.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   useEffect(() => {
     if (claimIdFromUrl && claims.some((c) => c.id === claimIdFromUrl)) {
@@ -382,58 +402,179 @@ export default function ClaimsTrackingView({ claims = [], unreadCounts }) {
               </div>
             )}
 
-            {selectedClaim.currentStage === 5 && selectedClaim.pickupPass && (
-              <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 text-white shadow-lg border border-blue-800/50">
-                <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center justify-center font-bold">
-                      <ShieldCheck className="w-4 h-4" />
-                    </span>
-                    <div>
-                      <h3 className="text-sm font-bold text-white tracking-wide uppercase">
-                        Digital Retrieval Pass & Locker PIN
+            {selectedClaim.currentStage === 5 && selectedClaim.pickupPass && (() => {
+              const isOwner =
+                !user ||
+                selectedClaim.studentId === user.studentId ||
+                selectedClaim.claimantId === user.studentId ||
+                selectedClaim.claimantId === user.id ||
+                user.role === 'admin';
+
+              const isExpired = selectedClaim.passExpiresAt
+                ? new Date(selectedClaim.passExpiresAt).getTime() < Date.now()
+                : false;
+
+              const qrPayload = JSON.stringify({
+                claimId: selectedClaim.id,
+                itemId: selectedClaim.itemId || '',
+                passCode: selectedClaim.passCode || '',
+              });
+
+              if (!isOwner) {
+                return (
+                  <div className="p-5 sm:p-6 rounded-2xl bg-slate-900 text-white border border-slate-800">
+                    <p className="text-xs font-semibold text-slate-300">
+                      Restricted Access: Only the authorized student claimant can view this retrieval pass and QR code.
+                    </p>
+                  </div>
+                );
+              }
+
+              if (isExpired) {
+                return (
+                  <div className="p-5 sm:p-6 rounded-2xl bg-amber-950/80 border border-amber-600/50 text-white shadow-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+                      <h3 className="text-sm font-bold uppercase tracking-wide text-amber-200">
+                        Retrieval Pass Expired
                       </h3>
-                      <p className="text-[11px] text-blue-200">Authorized by Campus Security</p>
                     </div>
+                    <p className="text-xs text-amber-100/90 leading-relaxed">
+                      The authorized pickup window for this claim ended on{' '}
+                      <strong>{formatValidityWindow(selectedClaim.passExpiresAt)}</strong>.
+                      For security, the QR pass and PIN have been deactivated. Please visit Central Security Desk Room 102 or contact staff to request a pass extension.
+                    </p>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                    Active Pass
-                  </span>
-                </div>
+                );
+              }
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                    <span className="text-[11px] font-medium text-blue-200 block">Pickup Location</span>
-                    <span className="text-xs font-bold text-white mt-0.5 block">{selectedClaim.pickupPass.station}</span>
-                    <span className="text-[10px] text-blue-300 mt-2 block">{selectedClaim.pickupPass.expiry}</span>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-white/10 border border-white/20 text-center flex flex-col items-center justify-center">
-                    <span className="text-[10px] font-semibold text-blue-200 uppercase tracking-widest block mb-1">
-                      Counter / Locker PIN
-                    </span>
+              return (
+                <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950 text-white shadow-xl border border-blue-800/60">
+                  <div className="flex flex-wrap items-center justify-between pb-3.5 border-b border-white/10 gap-3 mb-5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center justify-center font-bold">
+                        <QrCode className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-bold text-white tracking-wide uppercase">
+                          Contactless Retrieval Pass &amp; Locker PIN
+                        </h3>
+                        <p className="text-[11px] text-blue-200">
+                          Present this verified QR code or fallback PIN to the custody officer
+                        </p>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl sm:text-3xl font-mono font-extrabold tracking-widest text-amber-300">
-                        {selectedClaim.pickupPass.pin}
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                        Active Pass
                       </span>
                       <button
                         type="button"
-                        onClick={() => handleCopyPin(selectedClaim.pickupPass.pin)}
-                        className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[10px] font-semibold transition cursor-pointer"
-                        title="Copy PIN"
+                        onClick={() => navigate(`/dashboard/claims/${selectedClaim.id}/pass`)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition cursor-pointer"
+                        title="Open Printable Pass View"
                       >
-                        {copiedPin ? 'Copied!' : 'Copy'}
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Print Pass</span>
                       </button>
                     </div>
-                    <span className="text-[10px] text-white/60 font-mono mt-1">Pass ID: {selectedClaim.pickupPass.code}</span>
                   </div>
-                </div>
 
-                <p className="mt-3 text-[11px] text-blue-200/90 leading-relaxed bg-white/5 p-3 rounded-xl border border-white/10">
-                  {selectedClaim.pickupPass.notes}
-                </p>
-              </div>
-            )}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+                    {/* QR Code Container with White Quiet-Zone Margin */}
+                    <div className="md:col-span-4 flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-2xl text-center">
+                      <div className="p-3 bg-white rounded-xl shadow-md border border-slate-200">
+                        <QRCodeCanvas
+                          id={`qr-canvas-${selectedClaim.id}`}
+                          value={qrPayload}
+                          size={150}
+                          level="H"
+                          marginSize={3}
+                          bgColor="#ffffff"
+                          fgColor="#0f172a"
+                        />
+                      </div>
+                      <p className="text-[10px] text-blue-200 mt-2 font-mono">
+                        Secure Token Encrypted
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadQr(selectedClaim)}
+                        className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition shadow-xs cursor-pointer"
+                        title="Download QR code as PNG image"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download QR</span>
+                      </button>
+                    </div>
+
+                    {/* Middle Info: Station, Validity, Instructions */}
+                    <div className="md:col-span-4 flex flex-col justify-between gap-3 p-4 rounded-2xl bg-white/5 border border-white/10">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-blue-300 block mb-1">
+                          Designated Pickup Station
+                        </span>
+                        <p className="text-sm font-bold text-white">
+                          {selectedClaim.pickupPass.station}
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-blue-300 block mb-1">
+                          Pass Validity Window
+                        </span>
+                        <p className="text-xs font-semibold text-emerald-300">
+                          {formatValidityWindow(selectedClaim.passExpiresAt || selectedClaim.pickupPass?.expiresAt)}
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-400/30 text-amber-200 text-[11px]">
+                        <p className="font-bold flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                          <span>Student ID Required:</span>
+                        </p>
+                        <p className="text-[10px] mt-0.5 text-amber-100/80">
+                          Bring a valid school ID card. Security officers verify identity before release.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right: Counter / Locker 6-digit PIN */}
+                    <div className="md:col-span-4 flex flex-col justify-between items-center p-4 rounded-2xl bg-white/10 border border-white/20 text-center">
+                      <div className="w-full">
+                        <span className="text-[10px] font-semibold text-blue-200 uppercase tracking-widest block mb-1">
+                          Manual Fallback PIN
+                        </span>
+                        <p className="text-[10px] text-white/70 mb-2">
+                          Use if QR camera scanning is unavailable
+                        </p>
+                        <div className="flex items-center justify-center gap-2 my-2">
+                          <span className="text-3xl font-mono font-extrabold tracking-widest text-amber-300">
+                            {selectedClaim.pickupPass.pin}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyPin(selectedClaim.pickupPass.pin)}
+                            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold transition cursor-pointer"
+                            title="Copy PIN"
+                          >
+                            {copiedPin ? 'Copied!' : 'Copy'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="w-full pt-2 border-t border-white/10 text-[10px] text-white/60 font-mono">
+                        Pass Ref: {selectedClaim.pickupPass.code}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="mt-4 text-[11px] text-blue-200/90 leading-relaxed bg-white/5 p-3 rounded-xl border border-white/10">
+                    {selectedClaim.pickupPass.notes}
+                  </p>
+                </div>
+              );
+            })()}
 
             {selectedClaim.currentStage === 6 && selectedClaim.retrievalReceipt && (
               <div className="p-5 sm:p-6 rounded-2xl bg-emerald-50/80 border border-emerald-200 shadow-2xs">

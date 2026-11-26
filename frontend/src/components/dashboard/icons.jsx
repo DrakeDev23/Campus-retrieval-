@@ -284,3 +284,40 @@ export const Eye = createIcon(
     <circle cx="12" cy="12" r="3" />
   </>
 );
+
+export const QrCode = createIcon(
+  <>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <circle cx="6.5" cy="6.5" r="1.5" />
+    <circle cx="17.5" cy="6.5" r="1.5" />
+    <circle cx="6.5" cy="17.5" r="1.5" />
+    <circle cx="17.5" cy="17.5" r="1.5" />
+  </>
+);
+
+export const Printer = createIcon(
+  <>
+    <polyline points="6 9 6 2 18 2 18 9" />
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+    <rect x="6" y="14" width="12" height="8" rx="1" />
+  </>
+);
+
+export const Download = createIcon(
+  <>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </>
+);
+
+export const Key = createIcon(
+  <>
+    <circle cx="7.5" cy="15.5" r="5.5" />
+    <path d="m21 2-9.6 9.6" />
+    <path d="m15.5 7.5 3 3L22 7l-3-3" />
+  </>
+);

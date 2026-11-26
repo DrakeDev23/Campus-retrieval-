@@ -164,6 +164,19 @@ export const INITIAL_FOUND_CATALOG = [
     hiddenIdentifiers: 'P/N: 810-007421; faint yellow mark on thumb scroll wheel; paired with Bolt receiver',
     image: null,
   },
+  {
+    id: 'ITM-113',
+    title: 'Casio FX-991EX ClassWiz Calculator',
+    category: 'Books & Stationery',
+    status: 'Returned',
+    description: 'Black scientific calculator with slide cover found on desk in Room 204.',
+    foundTime: 'Oct 28, 04:15 PM',
+    location: 'Engineering Faculty Office Room 204',
+    custody: 'Engineering Faculty Office Room 204',
+    buttonType: 'closed',
+    hiddenIdentifiers: 'Custom yellow name sticker with initials "J.G.D." on battery cover; Casio S/N: FX-9041',
+    image: null,
+  },
 ];
 
 export function readItemsStore() {

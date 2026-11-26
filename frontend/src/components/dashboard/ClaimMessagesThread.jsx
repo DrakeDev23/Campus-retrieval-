@@ -8,9 +8,11 @@ import {
 } from '../../services/messagesService';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 
-export default function ClaimMessagesThread({ claimId, claim }) {
+export default function ClaimMessagesThread({ claimId, claim, readOnly }) {
   const queryClient = useQueryClient();
   const { user } = useCurrentUser();
+
+  const isCaseResolved = Boolean(readOnly || claim?.currentStage === 6 || claim?.passUsedAt);
 
   const [inputText, setInputText] = useState('');
   const [errorMsg, setErrorMsg] = useState(null);
@@ -312,7 +314,14 @@ export default function ClaimMessagesThread({ claimId, claim }) {
         )}
       </div>
 
-      <form onSubmit={handleSend} className="p-3 sm:p-4 border-t border-slate-200 bg-white space-y-2">
+      {isCaseResolved ? (
+        <div className="p-4 border-t border-slate-200 bg-slate-50 text-center">
+          <p className="text-xs font-semibold text-slate-600">
+            ✓ Case Handover Completed. This communication thread is closed and preserved as read-only.
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handleSend} className="p-3 sm:p-4 border-t border-slate-200 bg-white space-y-2">
         {errorMsg && (
           <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between">
             <span>{errorMsg}</span>
@@ -375,6 +384,7 @@ export default function ClaimMessagesThread({ claimId, claim }) {
           </div>
         </div>
       </form>
+      )}
     </div>
   );
 }

@@ -143,6 +143,7 @@ export default function AdminDashboard({ defaultTab }) {
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
           }}
           semester="Admin Security Hub • Terminal #01"
+          mode="admin"
         />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
@@ -151,8 +152,8 @@ export default function AdminDashboard({ defaultTab }) {
               <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 mb-2">
-                      <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-yellow-100 text-yellow-950 border border-yellow-300 mb-2">
+                      <ShieldCheck className="w-3.5 h-3.5 text-yellow-700" />
                       <span>Security Officer Verification Terminal</span>
                     </div>
                     <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
@@ -165,100 +166,65 @@ export default function AdminDashboard({ defaultTab }) {
 
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 shrink-0">
                     <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center min-w-[70px]">
-                      <span className="text-[10px] font-semibold text-slate-400 block">Total</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Total</span>
                       <span className="text-base font-extrabold text-slate-900">{totalCount}</span>
                     </div>
-                    <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded-xl text-center min-w-[70px]">
-                      <span className="text-[10px] font-semibold text-blue-700 block">Review</span>
-                      <span className="text-base font-extrabold text-blue-900">{inVerificationCount}</span>
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center min-w-[70px]">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Review</span>
+                      <span className="text-base font-extrabold text-slate-900">{inVerificationCount}</span>
                     </div>
-                    <div className="p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-xl text-center min-w-[70px]">
-                      <span className="text-[10px] font-semibold text-indigo-700 block">Ready</span>
-                      <span className="text-base font-extrabold text-indigo-900">{readyCount}</span>
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center min-w-[70px]">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Ready</span>
+                      <span className="text-base font-extrabold text-slate-900">{readyCount}</span>
                     </div>
-                    <div className="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-xl text-center min-w-[70px]">
-                      <span className="text-[10px] font-semibold text-emerald-700 block">Retrieved</span>
-                      <span className="text-base font-extrabold text-emerald-900">{retrievedCount}</span>
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center min-w-[70px]">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Retrieved</span>
+                      <span className="text-base font-extrabold text-slate-900">{retrievedCount}</span>
                     </div>
-                    <div className="p-2.5 bg-amber-50/70 border border-amber-200 rounded-xl text-center min-w-[70px]">
-                      <span className="text-[10px] font-semibold text-amber-700 block">Needs Info</span>
-                      <span className="text-base font-extrabold text-amber-900">{needsInfoCount}</span>
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center min-w-[70px]">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Needs Info</span>
+                      <span className="text-base font-extrabold text-slate-900">{needsInfoCount}</span>
                     </div>
-                    <div className="p-2.5 bg-rose-50/70 border border-rose-200 rounded-xl text-center min-w-[70px]">
-                      <span className="text-[10px] font-semibold text-rose-700 block">Rejected</span>
-                      <span className="text-base font-extrabold text-rose-900">{rejectedCount}</span>
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center min-w-[70px]">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Rejected</span>
+                      <span className="text-base font-extrabold text-slate-900">{rejectedCount}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mt-6 pt-5 border-t border-slate-100">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setClaimStatusFilter('all')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                        claimStatusFilter === 'all'
-                          ? 'bg-amber-600 text-white shadow-2xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      All ({totalCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setClaimStatusFilter('in-verification')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                        claimStatusFilter === 'in-verification'
-                          ? 'bg-blue-600 text-white shadow-2xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      In Verification ({inVerificationCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setClaimStatusFilter('ready')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                        claimStatusFilter === 'ready'
-                          ? 'bg-indigo-600 text-white shadow-2xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      Ready for Pickup ({readyCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setClaimStatusFilter('needs-info')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                        claimStatusFilter === 'needs-info'
-                          ? 'bg-amber-500 text-white shadow-2xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      Needs More Info ({needsInfoCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setClaimStatusFilter('rejected')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                        claimStatusFilter === 'rejected'
-                          ? 'bg-rose-600 text-white shadow-2xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      Rejected ({rejectedCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setClaimStatusFilter('retrieved')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                        claimStatusFilter === 'retrieved'
-                          ? 'bg-emerald-600 text-white shadow-2xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                      }`}
-                    >
-                      Retrieved ({retrievedCount})
-                    </button>
+                    {[
+                      { id: 'all', label: 'All', count: totalCount },
+                      { id: 'in-verification', label: 'In Verification', count: inVerificationCount },
+                      { id: 'ready', label: 'Ready for Pickup', count: readyCount },
+                      { id: 'needs-info', label: 'Needs More Info', count: needsInfoCount },
+                      { id: 'rejected', label: 'Rejected', count: rejectedCount },
+                      { id: 'retrieved', label: 'Retrieved', count: retrievedCount },
+                    ].map((tab) => {
+                      const isActive = claimStatusFilter === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setClaimStatusFilter(tab.id)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                            isActive
+                              ? 'bg-yellow-400 text-slate-950 font-bold shadow-2xs'
+                              : 'bg-slate-100 hover:bg-yellow-50 hover:text-yellow-950 text-slate-600'
+                          }`}
+                        >
+                          <span>{tab.label}</span>
+                          <span
+                            className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                              isActive ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {tab.count}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -269,7 +235,7 @@ export default function AdminDashboard({ defaultTab }) {
                         placeholder="Search item, ref, student..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                        className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400/30 focus:border-yellow-500"
                       />
                     </div>
 
@@ -358,7 +324,7 @@ export default function AdminDashboard({ defaultTab }) {
                               <button
                                 type="button"
                                 onClick={() => navigate(`/admin/claims/${claim.id}`)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-2xs transition cursor-pointer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold text-xs shadow-2xs transition cursor-pointer"
                               >
                                 <span>Review</span>
                                 <ChevronRight className="w-3.5 h-3.5" />
